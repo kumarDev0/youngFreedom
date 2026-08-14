@@ -1,0 +1,19 @@
+# secrets — never commit these
+.env
+.env.local
+.env.production
+*.pem
+
+node_modules/
+.next/
+out/
+build/
+dist/
+
+npm-debug.log*
+yarn-error.log*
+.DS_Store
+*.swp
+.vscode/settings.json
+/tmp/
+coverage/

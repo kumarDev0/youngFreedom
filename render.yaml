@@ -1,0 +1,70 @@
+# Render blueprint. Import this repo in Render and it wires everything up.
+# Every env var marked sync:false must be filled in the Render dashboard —
+# they are secrets and must never live in this file.
+services:
+  - type: web
+    name: youngfreedom
+    runtime: node
+    plan: starter          # do NOT use free: it sleeps after 15 min
+    region: singapore      # closest to Bihar
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_POOL_SIZE
+        value: "10"
+      - key: APP_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: AUTH_SECRET
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
+
+  - type: cron
+    name: yf-nightly-backup
+    runtime: node
+    plan: starter
+    schedule: "0 20 * * *"      # 01:30 IST
+    buildCommand: npm install
+    startCommand: node scripts/backup.mjs
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  - type: cron
+    name: yf-payment-reconcile
+    runtime: node
+    plan: starter
+    schedule: "30 2 * * *"      # 08:00 IST
+    buildCommand: npm install
+    startCommand: node scripts/reconcile.mjs
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
