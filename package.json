@@ -2,26 +2,30 @@
   "name": "youngfreedom",
   "version": "1.0.0",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "cleanup": "node cleanup.mjs",
     "backup": "node scripts/backup.mjs",
     "reconcile": "node scripts/reconcile.mjs",
     "seed:owner": "node scripts/seed-owner.mjs"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.3",
+    "cloudinary": "^2.5.0",
+    "jose": "^5.9.6",
+    "mongoose": "^8.9.0",
+    "nanoid": "^5.0.9",
     "next": "14.2.35",
+    "qrcode": "^1.5.4",
+    "razorpay": "^2.9.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "mongoose": "^8.9.0",
-    "zod": "^3.24.0",
-    "razorpay": "^2.9.6",
-    "cloudinary": "^2.5.0",
-    "@upstash/redis": "^1.34.3",
-    "@upstash/ratelimit": "^2.0.5",
-    "jose": "^5.9.6",
-    "nanoid": "^5.0.9"
+    "zod": "^3.24.0"
   }
 }

@@ -129,6 +129,28 @@ So the dashboard, exports and reports only ever contain candidates who
 actually paid. When testing, expect a new submission to appear in
 `pending_applications`, not in `applications`.
 
+## Signing in for the first time
+
+Create the owner account once, from your machine:
+
+```bash
+OWNER_EMAIL=you@domain.com OWNER_PASSWORD='at-least-12-characters' npm run seed:owner
+```
+
+Then clear it from your shell history (`history -c`).
+
+Open `http://localhost:3000/admin`. You will be sent to the sign-in page:
+
+1. Email and password
+2. A QR code appears — scan it with Google Authenticator or Authy
+3. Enter the 6-digit code
+4. **Save the eight backup codes.** They are shown once and stored only as
+   hashes, so nobody can recover them for you.
+
+Two-factor is mandatory for every account, including yours. This dashboard
+holds candidates' personal details and payment records, so an optional
+second factor would simply never be switched on.
+
 ## What is where
 
 ```

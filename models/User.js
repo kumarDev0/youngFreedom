@@ -1,13 +1,7 @@
 import mongoose from 'mongoose';
 
-/**
- * owner     — everything, including team management and payment data
- * admin     — applications, jobs, reports. Cannot manage users.
- * recruiter — only their own jobs and those applicants. No payment data,
- *             no export, phone numbers masked with a daily reveal cap.
- * viewer    — read only
- */
-export const ROLES = ['owner', 'admin', 'recruiter', 'viewer'];
+/* Roles and what each may do are defined in lib/permissions.js */
+export const ROLES = ['owner', 'admin', 'recruiter', 'caller', 'viewer'];
 
 const UserSchema = new mongoose.Schema({
   name:  { type: String, required: true, trim: true, maxlength: 80 },
@@ -30,8 +24,18 @@ const UserSchema = new mongoose.Schema({
   lastLoginAt:  { type: Date },
   lastLoginIp:  { type: String },
 
-  /* rolling counter for phone reveals, reset daily */
+  /* rolling counter for phone reveals, reset daily. A caller who reveals
+     far more numbers than they mark as called is the clearest signal that
+     a list is being copied rather than worked. */
   reveals: { date: String, count: { type: Number, default: 0 } },
+
+  /* calling-team stats, updated as outcomes are logged */
+  callStats: {
+    assigned:   { type: Number, default: 0 },
+    called:     { type: Number, default: 0 },
+    interested: { type: Number, default: 0 },
+    lastActiveAt: { type: Date }
+  },
 
   sessionVersion: { type: Number, default: 1 },   // bump to force logout everywhere
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }

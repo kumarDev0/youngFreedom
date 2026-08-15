@@ -1,3 +1,6 @@
+import { loadEnv } from '../lib/loadenv.mjs';
+loadEnv();
+
 /**
  * Nightly backup.
  *

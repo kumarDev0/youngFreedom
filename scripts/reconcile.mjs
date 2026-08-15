@@ -1,3 +1,6 @@
+import { loadEnv } from '../lib/loadenv.mjs';
+loadEnv();
+
 /**
  * Daily reconciliation: compare what Razorpay says it captured against what
  * our database recorded. A missed webhook means money arrived and the
@@ -15,6 +18,12 @@ const rzp = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET
 });
+
+if (!process.env.MONGODB_URI) {
+  console.error('MONGODB_URI is not set. Create .env.local in the project root,');
+  console.error('or run this from the folder that contains package.json.');
+  process.exit(1);
+}
 
 await mongoose.connect(process.env.MONGODB_URI);
 

@@ -1,17 +1,28 @@
-/** Security headers applied to every response. */
+/**
+ * Security headers applied to every response.
+ *
+ * The dev server needs 'unsafe-eval' because React Fast Refresh compiles
+ * modules in the browser. Production does not, and allowing it there would
+ * weaken the main defence against injected scripts — so it is added only
+ * when NODE_ENV is development.
+ */
+const isDev = process.env.NODE_ENV !== 'production';
+
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://challenges.cloudflare.com",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://checkout.razorpay.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline' https://api.fontshare.com https://fonts.googleapis.com",
   "font-src 'self' https://cdn.fontshare.com https://fonts.gstatic.com data:",
+  /* data: covers the QR code, which is generated on our own server —
+     the 2FA secret is never sent to a third party image service */
   "img-src 'self' data: blob: https://res.cloudinary.com",
-  "connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://api.cloudinary.com",
+  `connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com https://api.cloudinary.com${isDev ? ' ws: wss:' : ''}`,
   "frame-src https://api.razorpay.com https://checkout.razorpay.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "upgrade-insecure-requests"
+  ...(isDev ? [] : ['upgrade-insecure-requests'])
 ].join('; ');
 
 module.exports = {
