@@ -12,7 +12,8 @@ import fs from 'fs';
 import path from 'path';
 
 const STALE = [
-  'app/admin',              // moved into app/(dashboard) and app/(auth)
+  'app/admin',                              // moved into app/(dashboard) and app/(auth)
+  'app/(dashboard)/admin/LogoutButton.js',  // folded into Shell.js
   'scripts/backup.js',      // renamed to .mjs
   'scripts/reconcile.js',
   'scripts/seed-owner.js'

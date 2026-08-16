@@ -71,15 +71,15 @@ export default function LoginPage() {
     <div className="auth-wrap">
       <div className="auth-card">
         <div className="auth-brand">
-          <span className="auth-mark">YF</span>
-          <div><b>YoungFreedom</b><span>ADMIN</span></div>
+          <i className="mark">YF</i>
+          <div><b>YoungFreedom</b><span>ADMIN CONSOLE</span></div>
         </div>
 
         {error && <div className="alert">{error}</div>}
 
         {stage === 'password' && (
           <form onSubmit={submitPassword}>
-            <span className="auth-eyebrow">Sign in</span>
+            <span className="eyebrow">Sign in</span>
             <h1>Welcome back</h1>
             <p className="sub">Your account needs a password and a code from your authenticator app.</p>
 
@@ -99,7 +99,7 @@ export default function LoginPage() {
 
         {stage === 'setup' && setupData && (
           <form onSubmit={submitCode}>
-            <span className="auth-eyebrow">One-time setup</span>
+            <span className="eyebrow">One-time setup</span>
             <h1>Secure your account</h1>
             <p className="sub">
               Two-factor is required for every account here — this dashboard holds
@@ -136,7 +136,7 @@ export default function LoginPage() {
 
         {stage === '2fa' && (
           <form onSubmit={submitCode}>
-            <span className="auth-eyebrow">Step 2 of 2</span>
+            <span className="eyebrow">Step 2 of 2</span>
             <h1>Enter your code</h1>
             <p className="sub">Open your authenticator app and type the 6-digit code for YoungFreedom.</p>
 
@@ -159,7 +159,7 @@ export default function LoginPage() {
 
         {stage === 'backup' && backupCodes && (
           <div className="backup">
-            <span className="auth-eyebrow">Save these now</span>
+            <span className="eyebrow">Save these now</span>
             <h1>Backup codes</h1>
             <p className="sub">
               Each code works once, if you ever lose your phone. This is the only
