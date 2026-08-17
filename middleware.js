@@ -35,6 +35,9 @@ function redirectToLogin(req) {
   return NextResponse.redirect(url);
 }
 
+/* Only /admin is gated. The candidate status page is deliberately public:
+   the random token in its URL is what authorises it, and requiring a login
+   there would put an account between a candidate and their own record. */
 export const config = {
   matcher: ['/admin/:path*']
 };

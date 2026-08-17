@@ -979,6 +979,13 @@ select option{background:#0A1226;color:#EAF3FF}
 .err{color:#FF9A9A;font-size:.78rem;margin-top:8px}
 .count{display:block;text-align:right;margin-top:6px;font-family:var(--f-mono);font-size:.62rem;color:var(--steel-dk)}
 
+/* which job the candidate tapped, carried over from the board */
+.applying-for{
+  display:block;margin-bottom:18px;padding:11px 14px;
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan);border:1px solid rgba(99,226,255,.28);background:rgba(99,226,255,.07);
+}
+
 /* wizard head */
 .wiz-head{margin-bottom:26px}
 .wiz-meta{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px}
@@ -1346,6 +1353,7 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
   .rv{opacity:1;transform:none}
 }
 </style>
+<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 </head>
 <body>
 <div class="progress" id="prog"></div>
@@ -1987,6 +1995,8 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
     </div>
 
     <div class="form-card rv rv-d2">
+      <p class="applying-for" id="applyingFor" hidden></p>
+
       <div class="wiz-head">
         <div class="wiz-meta">
           <span class="wiz-count">Step <b id="stepNow">1</b> / 3</span>
@@ -2469,20 +2479,51 @@ var PARTNERS = [
   ["lt","L&T Valves"],["mahindra","Mahindra"],["pasco","Pasco"],["scala","Scala"]
 ];
 
+/**
+ * Jobs now come from the dashboard, over /api/jobs.
+ *
+ * These three are a fallback, shown only if that request fails — a candidate
+ * on a patchy connection should still see that real work exists here rather
+ * than an empty page.
+ */
 var JOBS = [
-  {t:"CNC Machine Operator",      c:"Divgi TTS",          loc:"Pune, Maharashtra",     min:18500,max:22000,tag:"iti",     qual:"ITI",     shift:"Day shift",       stay:"Stay provided", open:4, days:2},
-  {t:"Assembly Line Technician",  c:"Mahindra",           loc:"Nashik, Maharashtra",   min:17200,max:20500,tag:"fresher", qual:"10th/12th",shift:"Rotational",     stay:"Stay provided", open:12,days:1},
-  {t:"Electrical Maintenance",    c:"GE T&D India",       loc:"Chennai, Tamil Nadu",   min:21000,max:26000,tag:"diploma", qual:"Diploma", shift:"Day shift",       stay:"Canteen",       open:3, days:4},
-  {t:"Quality Inspector",         c:"L&T Valves",         loc:"Coimbatore, Tamil Nadu",min:19000,max:23000,tag:"diploma", qual:"Diploma", shift:"Day shift",       stay:"Stay provided", open:2, days:6},
-  {t:"Production Trainee",        c:"Hyundai",            loc:"Sriperumbudur, TN",     min:16500,max:19000,tag:"fresher", qual:"10th/12th",shift:"Rotational",     stay:"Bus + canteen", open:18,days:1},
-  {t:"Fitter — Mechanical",       c:"ACE India Pvt Ltd",  loc:"Faridabad, Haryana",    min:17800,max:21000,tag:"iti",     qual:"ITI",     shift:"Day shift",       stay:"Stay provided", open:6, days:3},
-  {t:"Electronics Assembler",     c:"Desai Electronics",  loc:"Bengaluru, Karnataka",  min:16000,max:19500,tag:"fresher", qual:"10th/12th",shift:"Day shift",       stay:"Canteen",       open:9, days:5},
-  {t:"Welder — MIG / TIG",        c:"AVLS India",         loc:"Ahmedabad, Gujarat",    min:20000,max:25000,tag:"iti",     qual:"ITI",     shift:"Rotational",      stay:"Stay provided", open:2, days:2},
-  {t:"Junior Design Engineer",    c:"Scala",              loc:"Pune, Maharashtra",     min:28000,max:34000,tag:"btech",   qual:"B.Tech",  shift:"Day shift",       stay:"Hybrid",        open:2, days:7},
-  {t:"Store & Dispatch Assistant",c:"Pasco",              loc:"Gurugram, Haryana",     min:15500,max:18000,tag:"fresher", qual:"10th/12th",shift:"Day shift",      stay:"Canteen",       open:5, days:9},
-  {t:"Maintenance Engineer",      c:"GE T&D India",       loc:"Vadodara, Gujarat",     min:30000,max:38000,tag:"btech",   qual:"B.Tech",  shift:"Day shift",       stay:"Stay provided", open:1, days:3},
-  {t:"Machine Setter",            c:"Divgi TTS",          loc:"Pune, Maharashtra",     min:19500,max:23500,tag:"diploma", qual:"Diploma", shift:"Rotational",      stay:"Stay provided", open:4, days:8}
+  {t:"CNC Machine Operator",     c:"Divgi TTS",   loc:"Pune, Maharashtra",   min:18500,max:22000,tag:"iti",     qual:"ITI",      shift:"Day shift", stay:"Stay provided", open:4, days:2},
+  {t:"Assembly Line Technician", c:"Mahindra",    loc:"Nashik, Maharashtra", min:17200,max:20500,tag:"fresher", qual:"10th/12th",shift:"Rotational",stay:"Stay provided", open:12,days:1},
+  {t:"Electrical Maintenance",   c:"GE T&D India",loc:"Chennai, Tamil Nadu", min:21000,max:26000,tag:"diploma", qual:"Diploma",  shift:"Day shift", stay:"Canteen",       open:3, days:4}
 ];
+
+/** The filter chips work on one bucket per job; a job open to several
+ *  qualifications is filed under the first one that matches. */
+function bucketFor(quals){
+  var q = (quals || []).join(" ").toLowerCase();
+  if (q.indexOf("b.tech") > -1) return "btech";
+  if (q.indexOf("diploma") > -1) return "diploma";
+  if (q.indexOf("iti") > -1) return "iti";
+  return "fresher";
+}
+
+function daysSince(iso){
+  if (!iso) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso)) / 86400000));
+}
+
+/** Maps a job from the API into the shape the cards already expect. */
+function fromApi(j){
+  return {
+    id: j.id,
+    t: j.title,
+    c: j.company,
+    loc: j.location || "",
+    min: (j.salary && j.salary.min) || 0,
+    max: (j.salary && j.salary.max) || 0,
+    tag: bucketFor(j.qualification),
+    qual: (j.qualification || []).join(" / ") || "Any",
+    shift: j.shift || "Day shift",
+    stay: j.stay || "",
+    open: j.openings || 0,
+    days: daysSince(j.postedAt)
+  };
+}
 
 var WALL = [
   {q:"I did my ITI in Gaya and had no idea how to reach a company outside Bihar. YoungFreedom set up the interview and told me my exact salary before I travelled.", n:"Ravi Kumar", r:"FITTER · PUNE", i:"RK"},
@@ -2521,12 +2562,14 @@ var FAQS = [
 
   /* jobs */
   var list = $("#jobList");
-  var money = function(n){ return "\u20B9" + n.toLocaleString("en-IN"); };
+  var money = function(n){ return "\u20B9" + (n||0).toLocaleString("en-IN"); };
+  var esc = function(v){ return String(v||"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;"); };
   var bookmark = '<svg viewBox="0 0 24 24"><path d="M6 3h12a1 1 0 011 1v17l-7-4-7 4V4a1 1 0 011-1z"/></svg>';
 
   function cardHTML(o,i){
     var few = o.open <= 3;
     return '<article class="job rv tilt" data-tag="'+o.tag+'" data-pay="'+o.min+'" data-open="'+o.open+'" '
+       +   'data-job="'+(o.id||"")+'" data-title="'+esc(o.t)+'" '
        +   'data-days="'+o.days+'" data-find="'+(o.t+" "+o.c+" "+o.loc).toLowerCase().replace(/"/g,"")+'">'
        +   '<span class="job-accent" aria-hidden="true"></span>'
        +   '<header class="job-head">'
@@ -2548,7 +2591,25 @@ var FAQS = [
        +   '<a class="job-apply" href="#apply">Apply for this role \u2192</a>'
        + '</article>';
   }
-  list.innerHTML = JOBS.map(cardHTML).join("");
+  function paint(jobs){
+    list.innerHTML = jobs.map(cardHTML).join("");
+    if(window.__yfReveal) window.__yfReveal(list);
+  }
+  paint(JOBS);
+
+  /* Swap in the live list as soon as it arrives. The fallback is already on
+     screen, so a slow connection sees jobs immediately rather than a spinner. */
+  fetch("/api/jobs")
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(data){
+      if(!data || !data.jobs || !data.jobs.length) return;
+      JOBS = data.jobs.map(fromApi);
+      paint(JOBS);
+      applyState();
+      var count = $("#jobCount");
+      if(count) count.textContent = JOBS.length;
+    })
+    .catch(function(){ /* keep the fallback */ });
 
   /* filter + search + sort, all applied together */
   var state = {f:"all", q:"", s:"new"};
@@ -2627,10 +2688,26 @@ var FAQS = [
 
   /* save a role for later */
   list.addEventListener("click", function(e){
-    var b = e.target.closest(".job-save"); if(!b) return;
-    e.preventDefault();
-    var on = b.classList.toggle("on");
-    b.setAttribute("aria-pressed", on);
+    var b = e.target.closest(".job-save");
+    if(b){
+      e.preventDefault();
+      var on = b.classList.toggle("on");
+      b.setAttribute("aria-pressed", on);
+      return;
+    }
+
+    /* Applying from a card carries the job through to the form, so the
+       dashboard knows which opening each candidate came for. */
+    var apply = e.target.closest(".job-apply");
+    if(apply){
+      var card = apply.closest(".job");
+      window.__yfJob = { id: card.dataset.job || "", title: card.dataset.title || "" };
+      var badge = document.getElementById("applyingFor");
+      if(badge && window.__yfJob.title){
+        badge.textContent = "Applying for: " + window.__yfJob.title;
+        badge.hidden = false;
+      }
+    }
   });
   applyState();
 
@@ -2688,6 +2765,12 @@ var FAQS = [
       });
     }, {rootMargin:"0px 0px -8% 0px", threshold:.08});
     els.forEach(function(e){ io.observe(e); });
+
+    /* Cards painted later (the live job list) still need to fade in, so the
+       observer is reachable from outside this module. */
+    window.__yfReveal = function(scope){
+      $$(".rv:not(.in)", scope).forEach(function(e){ io.observe(e); });
+    };
     /* safety net — if anything is still hidden after the page settles, show it */
     setTimeout(function(){
       $$(".rv:not(.in)").forEach(function(e){
@@ -3566,16 +3649,147 @@ var FAQS = [
     }
   });
 
+  /* ---- resume upload, straight to Cloudinary ---- */
+  /**
+   * The file goes from the browser to Cloudinary directly, using a signature
+   * our server issues. The file bytes never pass through our server, which
+   * removes an entire class of upload attacks — and keeps a 3 MB upload from
+   * occupying a request slot during a busy hour.
+   */
+  async function uploadResume(){
+    if(!fr.files.length) return {};
+    var sig = await fetch("/api/upload/signature").then(function(r){ return r.json(); });
+    if(sig.error) throw new Error("Could not prepare the upload. Try submitting without a resume.");
+
+    var fd = new FormData();
+    fd.append("file", fr.files[0]);
+    fd.append("api_key", sig.apiKey);
+    fd.append("timestamp", sig.timestamp);
+    fd.append("signature", sig.signature);
+    fd.append("folder", sig.folder);
+    fd.append("type", sig.type);
+
+    var up = await fetch("https://api.cloudinary.com/v1_1/" + sig.cloudName + "/auto/upload",
+                         { method:"POST", body: fd }).then(function(r){ return r.json(); });
+    if(!up.secure_url) throw new Error("The resume could not be uploaded. Try again, or submit without it.");
+    return { resumeUrl: up.secure_url, resumePublicId: up.public_id };
+  }
+
   /* ---- submit ---- */
-  form.addEventListener("submit", function(e){
+  form.addEventListener("submit", async function(e){
     e.preventDefault();
     if(!validate(1)){ go(1); return; }
     if(!validate(2)){ go(2); return; }
+
     var btn = el("paySubmit");
-    btn.disabled = true; btn.textContent = "Opening secure payment…";
-    showNote("Details saved. Redirecting you to the ₹249 payment page…", true);
-    /* TODO: POST new FormData(form) to your backend, then open the gateway. */
+    var original = btn.textContent;
+    btn.disabled = true;
+    showNote("");
+
+    try {
+      if(fr.files.length){ btn.textContent = "Uploading resume\u2026"; }
+      var resume = await uploadResume();
+
+      btn.textContent = "Saving your details\u2026";
+
+      /* No amount is sent. The fee is decided on the server from the
+         qualification, so editing this request changes nothing. */
+      var payload = {
+        name: fn.value.trim(),
+        phone: fp.value.replace(/\D/g, ""),
+        district: fd.value.trim(),
+        qualification: fq.value,
+        trade: ft.value.trim(),
+        experience: fe.value,
+        message: fm.value.trim(),
+        jobId: (window.__yfJob && window.__yfJob.id) || "",
+        website: ""                                   // honeypot, must stay empty
+      };
+      Object.assign(payload, resume);
+
+      var res = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      var data = await res.json();
+
+      if(!res.ok){
+        if(res.status === 409 && data.statusUrl){
+          showNote(data.error + " Track it here: " + location.origin + data.statusUrl, true);
+          btn.textContent = original; btn.disabled = false;
+          return;
+        }
+        throw new Error(data.error || "Something went wrong. Please try again.");
+      }
+
+      /* the server confirms what is actually owed */
+      btn.textContent = "Opening secure payment\u2026";
+      openCheckout(data, payload);
+
+    } catch(err){
+      showNote(err.message || "Something went wrong. Please try again.");
+      btn.textContent = original;
+      btn.disabled = false;
+    }
   });
+
+  /**
+   * Razorpay checkout.
+   *
+   * The screen the candidate sees is updated by the handler below, but the
+   * application is only created by the server-side webhook. If the phone
+   * dies or the tab closes right after paying, the record is still made.
+   */
+  function openCheckout(data, payload){
+    if(typeof Razorpay === "undefined"){
+      showNote("Payment could not start. Check your connection and try again.");
+      el("paySubmit").disabled = false;
+      return;
+    }
+
+    var rzp = new Razorpay({
+      key: data.keyId,
+      order_id: data.order.id,
+      amount: data.order.amount,
+      currency: "INR",
+      name: "YoungFreedom",
+      description: "Processing fee \u00b7 " + data.appId,
+      image: "/img/team.jpg",
+      prefill: { name: payload.name, contact: payload.phone, email: payload.email || "" },
+      theme: { color: "#1B5CFF" },
+      handler: function(r){
+        fetch("/api/payments/order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: r.razorpay_order_id,
+            paymentId: r.razorpay_payment_id,
+            signature: r.razorpay_signature
+          })
+        }).finally(function(){
+          window.location.href = data.statusUrl;
+        });
+      },
+      modal: {
+        ondismiss: function(){
+          var btn = el("paySubmit");
+          btn.disabled = false;
+          btn.textContent = "Pay \u20B9" + data.amount + " & submit \u2192";
+          showNote("Payment was not completed. Your details are saved \u2014 you can pay now to finish.", true);
+        }
+      }
+    });
+
+    rzp.on("payment.failed", function(resp){
+      showNote((resp.error && resp.error.description) || "The payment failed. Please try again.");
+      var btn = el("paySubmit");
+      btn.disabled = false;
+      btn.textContent = "Pay \u20B9" + data.amount + " & submit \u2192";
+    });
+
+    rzp.open();
+  }
 
   go(1); updatePass();
 })();
