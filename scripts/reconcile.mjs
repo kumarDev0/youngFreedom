@@ -2,22 +2,21 @@ import { loadEnv } from '../lib/loadenv.mjs';
 loadEnv();
 
 /**
- * Daily reconciliation: compare what Razorpay says it captured against what
- * our database recorded. A missed webhook means money arrived and the
- * candidate has no application — this script finds and repairs that.
+ * Daily reconciliation.
+ *
+ * Cashfree has no bulk "list everything captured today" endpoint the way
+ * Razorpay does, so this works the other way round: it walks every
+ * PendingApplication that has not expired yet and asks Cashfree, order by
+ * order, whether it was actually paid. That is a smaller, bounded set — our
+ * own unpaid orders — rather than an unbounded feed, and it catches exactly
+ * the case that matters: money arrived and the webhook never landed.
  *
  * Render cron: "30 2 * * *"
  */
 import mongoose from 'mongoose';
-import Razorpay from 'razorpay';
 import Payment from '../models/Payment.js';
 import Application from '../models/Application.js';
 import PendingApplication from '../models/PendingApplication.js';
-
-const rzp = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
-});
 
 if (!process.env.MONGODB_URI) {
   console.error('MONGODB_URI is not set. Create .env.local in the project root,');
@@ -25,42 +24,50 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
+const CF_ENV = (process.env.CASHFREE_ENV || 'SANDBOX').toUpperCase();
+const BASE = CF_ENV === 'PRODUCTION' ? 'https://api.cashfree.com/pg' : 'https://sandbox.cashfree.com/pg';
+
+async function fetchOrder(orderId) {
+  const res = await fetch(`${BASE}/orders/${encodeURIComponent(orderId)}`, {
+    headers: {
+      'x-client-id': process.env.CASHFREE_CLIENT_ID,
+      'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+      'x-api-version': '2023-08-01'
+    }
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function fetchPayments(orderId) {
+  const res = await fetch(`${BASE}/orders/${encodeURIComponent(orderId)}/payments`, {
+    headers: {
+      'x-client-id': process.env.CASHFREE_CLIENT_ID,
+      'x-client-secret': process.env.CASHFREE_CLIENT_SECRET,
+      'x-api-version': '2023-08-01'
+    }
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 await mongoose.connect(process.env.MONGODB_URI);
 
-const to = Math.floor(Date.now() / 1000);
-const from = to - 36 * 3600;                 // overlap the window on purpose
+const pendingRows = await PendingApplication.find({}).lean();
+let repaired = 0, checked = 0;
 
-const { items } = await rzp.payments.all({ from, to, count: 100 });
-let repaired = 0, orphans = 0;
+for (const pending of pendingRows) {
+  checked++;
+  const order = await fetchOrder(pending.orderId);
+  if (!order || order.order_status !== 'PAID') continue;
 
-for (const p of items) {
-  if (p.status !== 'captured') continue;
+  const already = await Application.findOne({ 'payment.orderId': pending.orderId }).select('_id').lean();
+  if (already) continue;   // the webhook landed between the query and now
 
-  const known = await Application.findOne({ 'payment.paymentId': p.id }).select('_id').lean();
-  if (known) continue;                        // already fine
+  const payments = await fetchPayments(pending.orderId);
+  const success = payments.find((p) => p.payment_status === 'SUCCESS') || payments[0] || {};
 
-  const pending = await PendingApplication.findOne({ orderId: p.order_id }).lean();
-
-  if (!pending) {
-    /* The pending row already expired, or the payment was never issued by
-       us. Do not invent an application — flag it for a human. */
-    console.error('ORPHAN PAYMENT (needs manual review):', p.id, p.amount / 100, p.notes);
-    orphans++;
-    await Payment.updateOne(
-      { paymentId: p.id },
-      {
-        $setOnInsert: {
-          paymentId: p.id, orderId: p.order_id, appId: p.notes?.appId,
-          amount: p.amount / 100, status: 'captured', method: p.method,
-          email: p.email, contact: p.contact, raw: p, reconciled: true
-        }
-      },
-      { upsert: true }
-    );
-    continue;
-  }
-
-  console.warn('MISSED WEBHOOK, repairing:', p.id, p.amount / 100, pending.appId);
+  console.warn('MISSED WEBHOOK, repairing:', pending.orderId, pending.fee?.amount, pending.appId);
 
   const application = await Application.create({
     appId: pending.appId, token: pending.token,
@@ -70,20 +77,22 @@ for (const p of items) {
     resumeUrl: pending.resumeUrl, resumePublicId: pending.resumePublicId,
     jobId: pending.jobId, fee: pending.fee,
     payment: {
-      status: 'paid', orderId: p.order_id, paymentId: p.id,
-      method: p.method, amount: p.amount / 100,
-      paidAt: new Date(p.created_at * 1000)
+      status: 'paid', orderId: pending.orderId,
+      paymentId: String(success.cf_payment_id || pending.orderId),
+      method: success.payment_group, amount: pending.fee?.amount,
+      paidAt: success.payment_time ? new Date(success.payment_time) : new Date()
     },
     ipHash: pending.ipHash, userAgent: pending.userAgent
   });
 
   await Payment.updateOne(
-    { paymentId: p.id },
+    { paymentId: String(success.cf_payment_id || pending.orderId) },
     {
       $setOnInsert: {
-        paymentId: p.id, orderId: p.order_id, appId: pending.appId,
-        amount: p.amount / 100, status: 'captured', method: p.method,
-        email: p.email, contact: p.contact, raw: p
+        paymentId: String(success.cf_payment_id || pending.orderId),
+        orderId: pending.orderId, appId: pending.appId,
+        amount: pending.fee?.amount, status: 'captured',
+        method: success.payment_group, raw: success
       },
       $set: { applicationId: application._id, reconciled: true }
     },
@@ -94,5 +103,5 @@ for (const p of items) {
   repaired++;
 }
 
-console.log(`checked ${items.length} payments · repaired ${repaired} · orphans ${orphans}`);
+console.log(`checked ${checked} pending order(s) · repaired ${repaired}`);
 await mongoose.disconnect();

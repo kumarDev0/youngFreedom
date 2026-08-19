@@ -16,7 +16,21 @@ const STALE = [
   'app/(dashboard)/admin/LogoutButton.js',  // folded into Shell.js
   'scripts/backup.js',      // renamed to .mjs
   'scripts/reconcile.js',
-  'scripts/seed-owner.js'
+  'scripts/seed-owner.js',
+
+  /* replaced by smaller WebP versions of the same photographs */
+  'public/img/team.jpg',
+  'public/img/sunset.jpg',
+  'public/img/portrait.jpg',
+  'public/img/batch1.jpg',
+  'public/img/batch2.jpg',
+  'public/img/batch3.jpg',
+  'public/img/batch4.jpg',
+  'public/img/batch5.jpg',
+  'public/img/batch6.jpg',
+
+  /* replaced by the Cashfree integration */
+  'lib/razorpay.js'
 ];
 
 let removed = 0;

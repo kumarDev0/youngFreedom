@@ -5,7 +5,9 @@ services:
   - type: web
     name: youngfreedom
     runtime: node
-    plan: starter          # do NOT use free: it sleeps after 15 min
+    plan: free              # sleeps after 15 min idle — pair with an external
+                             # uptime pinger (e.g. cron-job.org hitting /api/health
+                             # every 10 min) so it never actually goes to sleep
     region: singapore      # closest to Bihar
     buildCommand: npm install && npm run build
     startCommand: npm start
@@ -15,17 +17,19 @@ services:
       - key: NODE_ENV
         value: production
       - key: MONGO_POOL_SIZE
-        value: "10"
+        value: "5"   # free plan has only 512 MB RAM — keep the pool small
       - key: APP_URL
         sync: false
       - key: MONGODB_URI
         sync: false
-      - key: RAZORPAY_KEY_ID
+      - key: CASHFREE_CLIENT_ID
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: CASHFREE_CLIENT_SECRET
         sync: false
-      - key: RAZORPAY_WEBHOOK_SECRET
+      - key: CASHFREE_WEBHOOK_SECRET
         sync: false
+      - key: CASHFREE_ENV
+        value: SANDBOX        # switch to PRODUCTION once KYC is approved
       - key: CLOUDINARY_CLOUD_NAME
         sync: false
       - key: CLOUDINARY_API_KEY
@@ -37,6 +41,12 @@ services:
       - key: TURNSTILE_SECRET_KEY
         sync: false
 
+  # Cron jobs are billed separately from the free web service and may
+  # require a paid workspace on some Render plans. If that applies to your
+  # account, skip these for now and run both scripts by hand from the
+  # web service's Shell tab until the free tier makes sense to leave behind:
+  #   node scripts/backup.mjs
+  #   node scripts/reconcile.mjs
   - type: cron
     name: yf-nightly-backup
     runtime: node
@@ -64,7 +74,9 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false
-      - key: RAZORPAY_KEY_ID
+      - key: CASHFREE_CLIENT_ID
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: CASHFREE_CLIENT_SECRET
         sync: false
+      - key: CASHFREE_ENV
+        value: SANDBOX

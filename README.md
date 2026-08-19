@@ -39,7 +39,19 @@ down. A persistent process shares one pooled connection across all requests.
 
 ## Decisions worth explaining
 
-### The payment webhook is the source of truth, not the browser
+### Payments run through Cashfree, and the webhook is the source of truth — not the browser
+
+Razorpay rejected this business during KYC review, categorising a
+candidate-side recruitment fee as high-risk. Cashfree was the switch, and
+the payment code was isolated behind `lib/cashfree.js` from the start —
+the order-create call, the webhook signature scheme, and one field in the
+return URL were the only things that changed. The pending-collection
+design, the fee logic, and every route above the payment layer stayed
+exactly as they were.
+
+One real difference: Cashfree's checkout redirect carries no signed proof
+the way Razorpay's browser callback did, so nothing from that redirect is
+trusted on its own. The original point still holds — read on.
 
 The obvious implementation marks an application paid when Razorpay's
 JavaScript callback fires in the browser. That implementation loses money.

@@ -4,11 +4,12 @@ import PendingApplication from '../../../models/PendingApplication.js';
 import Application from '../../../models/Application.js';
 import { nextAppId } from '../../../models/Counter.js';
 import { applicationSchema, firstError } from '../../../lib/validation.js';
-import { feeForQualification, toPaise } from '../../../lib/fees.js';
+import { feeForQualification } from '../../../lib/fees.js';
 import { rateLimit, clientIp } from '../../../lib/ratelimit.js';
 import { verifyTurnstile } from '../../../lib/turnstile.js';
 import { hashIp, randomToken } from '../../../lib/hash.js';
-import { getRazorpay } from '../../../lib/razorpay.js';
+import { createOrder } from '../../../lib/cashfree.js';
+import { env } from '../../../lib/env.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,7 @@ export const dynamic = 'force-dynamic';
  * left unpaid is deleted by MongoDB's TTL index after 24 hours, so an
  * unpaid form never becomes a permanent record.
  *
- * This handler stays deliberately thin — one insert, one Razorpay call.
+ * This handler stays deliberately thin — one insert, one Cashfree call.
  * Anything slower (WhatsApp, email, analytics) belongs on a queue.
  */
 export async function POST(req) {
@@ -79,21 +80,25 @@ export async function POST(req) {
     const appId = previous ? previous.appId : await nextAppId();
     const token = previous ? previous.token : randomToken(18);
 
-    /* 8. Razorpay order. receipt carries our id so reconciliation is trivial. */
+    /* 8. Cashfree order. The order_id is our own appId — no separate mapping
+          table is needed to connect a payment back to a candidate. */
     let order;
     try {
-      order = await getRazorpay().orders.create({
-        amount: toPaise(amount),
-        currency: 'INR',
-        receipt: appId,
-        notes: { appId, qualification: data.qualification, phone: data.phone }
+      order = await createOrder({
+        orderId: appId,
+        amount,
+        phone: data.phone,
+        name: data.name,
+        email: data.email || undefined,
+        returnUrl: `${env.appUrl}/status/${appId}-${token}`
       });
     } catch (e) {
-      if (e.message === 'RAZORPAY_NOT_CONFIGURED') {
-        console.error('[applications] Razorpay keys are missing');
+      if (e.message === 'CASHFREE_NOT_CONFIGURED') {
+        console.error('[applications] Cashfree keys are missing');
         return NextResponse.json({ error: 'Payments are temporarily unavailable.' }, { status: 503 });
       }
-      throw e;
+      console.error('[applications] Cashfree order failed:', e.message);
+      return NextResponse.json({ error: 'Could not start the payment. Please try again.' }, { status: 502 });
     }
 
     /* 9. hold the details until the payment confirms them */
@@ -110,7 +115,7 @@ export async function POST(req) {
           resumePublicId: data.resumePublicId || undefined,
           jobId: data.jobId || undefined,
           fee: { tier: data.qualification, amount },
-          orderId: order.id,
+          orderId: order.order_id,
           ipHash: hashIp(ip),
           userAgent: (req.headers.get('user-agent') || '').slice(0, 300),
           createdAt: new Date()          // restarts the 24h expiry on a retry
@@ -124,8 +129,9 @@ export async function POST(req) {
       appId,
       amount,
       statusUrl: `/status/${appId}-${token}`,
-      order: { id: order.id, amount: order.amount, currency: order.currency },
-      keyId: process.env.RAZORPAY_KEY_ID
+      /* the browser needs only the session id to open Cashfree's checkout */
+      order: { id: order.order_id, paymentSessionId: order.payment_session_id },
+      cashfreeEnv: env.cashfree.env
     });
 
   } catch (err) {

@@ -101,6 +101,41 @@ Three popular packages were deliberately left out:
 Next.js is pinned to **14.2.35**, the patched release for CVE-2025-55184 and
 CVE-2025-67779. Do not downgrade it.
 
+## Testing payments (Cashfree)
+
+Test-mode credentials work without KYC approval:
+
+Cashfree Dashboard → Switch to Test → Developers → API Keys, then set:
+
+```
+CASHFREE_CLIENT_ID=<test client id>
+CASHFREE_CLIENT_SECRET=<test client secret>
+CASHFREE_ENV=SANDBOX
+```
+
+`CASHFREE_WEBHOOK_SECRET` is not issued anywhere — you generate it yourself
+and use the same value in two places:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(24).toString('hex'))"
+```
+
+Put that in `.env.local`, and paste the exact same string into
+Cashfree Dashboard → Webhooks → Add Webhook → Secret, alongside:
+
+- URL: `<your Render URL>/api/payments/webhook`
+- Events: Payment Success, Payment Failed, Payment User Dropped, Refund Status
+
+Cashfree's redirect after checkout carries no signed proof — only the
+webhook creates an application. Test with the sandbox checkout's built-in
+success/failure buttons, then confirm in Atlas that
+`pending_applications` emptied into `applications` rather than checking
+the browser screen alone.
+
+Switching to live payments later is a two-value change once KYC is
+approved: swap `CASHFREE_ENV` to `PRODUCTION` and the client id/secret to
+the live pair. Nothing else in the code changes.
+
 ## If `npm audit` reports vulnerabilities
 
 Find out which package is pulling in the bad one before changing anything:

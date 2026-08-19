@@ -4,7 +4,7 @@ import { QUALIFICATIONS } from '../lib/fees.js';
 /**
  * A holding area, not a record.
  *
- * Razorpay needs an order created before the candidate can pay, and the
+ * Cashfree needs an order created before the candidate can pay, and the
  * webhook that confirms payment only sends back an orderId — no name, no
  * phone. So the details have to live somewhere for the few minutes between
  * "submitted" and "paid", or a successful payment would arrive with nobody

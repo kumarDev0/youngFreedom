@@ -2,19 +2,24 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db.js';
 import Application from '../../../../models/Application.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
-import { verifyPaymentSignature } from '../../../../lib/razorpay.js';
+import { fetchOrder } from '../../../../lib/cashfree.js';
 import { rateLimit, clientIp } from '../../../../lib/ratelimit.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/payments/order  — browser callback after checkout closes.
+ * POST /api/payments/order  { orderId }
  *
- * This exists only so the candidate sees "success" immediately. It is NOT
- * trusted as proof of payment and it never creates an Application; only the
- * webhook does that. We verify the signature anyway so nobody can fake a
- * success screen.
+ * Cashfree's checkout redirects the candidate back to our own return_url
+ * with no signed proof attached — unlike Razorpay's browser callback, there
+ * is nothing here worth trusting on its own. So this route asks Cashfree
+ * directly, server-to-server, what the order's actual status is.
+ *
+ * It still never creates an Application; only the webhook does that. This
+ * exists purely so the UI can say "confirmed" a few seconds sooner when the
+ * webhook has already landed, or explain that payment is still processing
+ * when it has not.
  */
 export async function POST(req) {
   const ip = clientIp(req);
@@ -22,11 +27,8 @@ export async function POST(req) {
   if (!limit.ok) return NextResponse.json({ error: 'Too many attempts' }, { status: 429 });
 
   try {
-    const { orderId, paymentId, signature } = await req.json();
-
-    if (!verifyPaymentSignature({ orderId, paymentId, signature })) {
-      return NextResponse.json({ ok: false, error: 'Signature mismatch' }, { status: 400 });
-    }
+    const { orderId } = await req.json();
+    if (!orderId) return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
 
     await connectDB();
 
@@ -41,13 +43,21 @@ export async function POST(req) {
       });
     }
 
-    /* signature is valid but the webhook has not landed yet — normal, it
-       usually arrives within seconds. The status page will reflect it. */
     const pending = await PendingApplication.findOne({ orderId }).select('appId token').lean();
     if (!pending) return NextResponse.json({ ok: false, error: 'Order not found' }, { status: 404 });
 
+    /* ask Cashfree directly, in case the webhook is only a few seconds late */
+    let cfStatus = null;
+    try {
+      const order = await fetchOrder(orderId);
+      cfStatus = order.order_status;
+    } catch (e) {
+      console.error('[verify] Cashfree lookup failed:', e.message);
+    }
+
     return NextResponse.json({
-      ok: true, confirmed: false,
+      ok: true,
+      confirmed: cfStatus === 'PAID',   // webhook just hasn't landed yet if true
       appId: pending.appId,
       statusUrl: `/status/${pending.appId}-${pending.token}`
     });

@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const PaymentSchema = new mongoose.Schema({
   /**
-   * Unique. Razorpay retries webhooks, and a retry must never create a
+   * Unique. Cashfree retries webhooks, and a retry must never create a
    * second row — the duplicate insert fails, which is exactly what we want.
    */
   paymentId: { type: String, required: true, unique: true },
