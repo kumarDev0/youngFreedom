@@ -3715,6 +3715,11 @@ var FAQS = [
     var sig = await fetch("/api/upload/signature").then(function(r){ return r.json(); });
     if(sig.error) throw new Error("Could not prepare the upload. Try submitting without a resume.");
 
+    /* Every parameter the server signed has to be sent back exactly as
+       signed — Cloudinary recomputes the signature from what arrives here
+       and rejects the upload (401) if even one signed field is missing or
+       different. allowed_formats was signed on the server but was not
+       being sent here, which is why every upload failed. */
     var fd = new FormData();
     fd.append("file", fr.files[0]);
     fd.append("api_key", sig.apiKey);
@@ -3722,6 +3727,7 @@ var FAQS = [
     fd.append("signature", sig.signature);
     fd.append("folder", sig.folder);
     fd.append("type", sig.type);
+    fd.append("allowed_formats", sig.allowed_formats);
 
     var up = await fetch("https://api.cloudinary.com/v1_1/" + sig.cloudName + "/auto/upload",
                          { method:"POST", body: fd }).then(function(r){ return r.json(); });
