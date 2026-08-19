@@ -16,8 +16,8 @@ const csp = [
   /* data: covers the QR code, which is generated on our own server —
      the 2FA secret is never sent to a third party image service */
   "img-src 'self' data: blob: https://res.cloudinary.com",
-  `connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://api.cloudinary.com${isDev ? ' ws: wss:' : ''}`,
-  "frame-src https://sdk.cashfree.com https://payments.cashfree.com https://challenges.cloudflare.com",
+  `connect-src 'self' https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com https://payments-test.cashfree.com https://api.cloudinary.com${isDev ? ' ws: wss:' : ''}`,
+  "frame-src https://sdk.cashfree.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com https://payments-test.cashfree.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
