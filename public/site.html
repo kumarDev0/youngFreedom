@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#04091A">
 <title>YoungFreedom | Bihar to Bharat — Verified Jobs for Bihar's Youth</title>
 <meta name="description" content="YoungFreedom connects Bihar's skilled youth with verified industrial jobs across India. Clear salary, real support, 15-day job support promise.">
-<link rel="preload" as="image" href="img/team.jpg" fetchpriority="high">
+<link rel="preload" as="image" href="img/team.webp" fetchpriority="high">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -566,16 +566,29 @@ select option{background:#0A1226;color:#EAF3FF}
 
 
 :root{
-  --img-team:url("img/team.jpg");
-  --img-sunset:url("img/sunset.jpg");
-  --img-b1:url("img/batch1.jpg");
-  --img-b2:url("img/batch2.jpg");
-  --img-b3:url("img/batch3.jpg");
-  --img-b4:url("img/batch4.jpg");
-  --img-b5:url("img/batch5.jpg");
-  --img-b6:url("img/batch6.jpg");
-  --img-portrait:url("img/portrait.jpg");
+  --img-team:url("img/team.webp");
+  --img-sunset:none;
+  --img-b1:none;
+  --img-b2:none;
+  --img-b3:none;
+  --img-b4:none;
+  --img-b5:none;
+  --img-b6:none;
+  --img-portrait:none;
 }
+/* Loaded on approach by the deferImages() module, so first paint fetches
+   only the hero photograph instead of all nine. */
+.img-ready{
+  --img-b1:url("img/batch1.webp");
+  --img-b2:url("img/batch2.webp");
+  --img-b3:url("img/batch3.webp");
+  --img-b4:url("img/batch4.webp");
+  --img-b5:url("img/batch5.webp");
+  --img-b6:url("img/batch6.webp");
+}
+.band.img-ready{--img-sunset:url("img/sunset.webp")}
+.counsel.img-ready{--img-portrait:url("img/portrait.webp")}
+
 
 /* ---------- photography treatments ---------- */
 /* duotone at rest, real colour on hover — the photo rewards attention */
@@ -1169,6 +1182,24 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
 .wa svg{width:27px;height:27px;fill:#fff}
 .mobar{display:none}
 
+/* While the page is moving, every looping animation stops. Each one is a
+   separate compositor job competing with the scroll for the same frame. */
+body.is-scrolling .marq-track,
+body.is-scrolling .pass-sheen,
+body.is-scrolling .dot.live,
+body.is-scrolling .pin i,
+body.is-scrolling .counsel .shot::after{
+  animation-play-state:paused;
+}
+/* Hover effects are pure cost mid-scroll: they force style recalculation on
+   whatever the pointer happens to pass over. */
+body.is-scrolling .card,
+body.is-scrolling .job,
+body.is-scrolling .quote,
+body.is-scrolling .acc-panel{
+  transition:none;
+}
+
 /* ---------- reveal ---------- */
 .rv{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
 .rv.in{opacity:1;transform:none}
@@ -1204,7 +1235,17 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
   .field.full{grid-column:span 1}
   .rail{grid-template-columns:1fr;gap:26px}
   .step{padding:0}
-  .foot-grid{grid-template-columns:1fr}
+
+  /* Footer: four blocks stacked into one column made it roughly a full
+     screen tall on a phone. Two columns for the link groups halves that,
+     while the brand block keeps the full width so its line still reads. */
+  .foot-grid{grid-template-columns:1fr 1fr;gap:26px 20px}
+  .foot-grid>div:first-child{grid-column:1/-1;margin-bottom:2px}
+  .foot-grid h4{margin-bottom:11px;font-size:.58rem}
+  .foot-grid a{padding:7px 0;font-size:.87rem}
+  .foot-bot{margin-top:30px;padding-top:18px;flex-direction:column;
+    align-items:center;gap:8px;text-align:center}
+
   .photo-stack{min-height:330px}
   .jobs{grid-template-columns:1fr}
   .float-b{bottom:-16px;right:-4px;padding:12px}
@@ -1216,7 +1257,7 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
     border-top:1px solid var(--line);
   }
   .mobar .btn{flex:1;justify-content:center;padding:14px}
-  footer{padding-bottom:96px}
+  footer{padding-block:40px 96px}
   .stat-row{grid-template-columns:1fr;gap:22px}
 }
 
@@ -1353,7 +1394,7 @@ footer{border-top:1px solid var(--line);padding-block:56px 34px;background:var(-
   .rv{opacity:1;transform:none}
 }
 </style>
-<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<script src="https://sdk.cashfree.com/js/v3/cashfree.js" defer></script>
 </head>
 <body>
 <div class="progress" id="prog"></div>
@@ -2349,6 +2390,11 @@ var $$ = function(s,c){return Array.prototype.slice.call((c||document).querySele
   function start(){ if(running||RM) return; running=true; raf=requestAnimationFrame(loop); }
   function stop(){ running=false; if(raf) cancelAnimationFrame(raf); raf=null; }
 
+  /* hand the frame budget to the scroll while the page is moving */
+  var wasRunning = false;
+  window.addEventListener("yf:scrollstart", function(){ wasRunning = running; stop(); });
+  window.addEventListener("yf:scrollend",   function(){ if(wasRunning) start(); });
+
   var rt;
   window.addEventListener("resize", function(){
     clearTimeout(rt); rt = setTimeout(function(){ size(); if(RM) draw(); }, 200);
@@ -3108,7 +3154,9 @@ var FAQS = [
   var qScale = 1;                       /* dialled down automatically if frames run long */
   function buildTable(){
     var q = (drag ? 0.62 : 1) * qScale;
-    var cap = MOBILE ? 300 : 480;
+    /* Buffer size is the single biggest cost: the render loop touches every
+       pixel of it, every frame. 260px still fills a phone screen once scaled. */
+    var cap = MOBILE ? 260 : 440;
     D = Math.max(120, Math.min(cap, Math.round(2*R*DPR*q)));
     tblX = rotX; tblR = R; tblQ = q;
 
@@ -3385,13 +3433,19 @@ var FAQS = [
     draw();
     /* if this device cannot keep up, quietly render the planet smaller */
     frameT = performance.now() - fStart;
-    if(ready && frameT > 15){
-      if(++slow > 20 && qScale > 0.55){ qScale -= 0.15; slow = 0; tblX = null; }
+    if(ready && frameT > 13){
+      if(++slow > 12 && qScale > 0.5){ qScale -= 0.15; slow = 0; tblX = null; }
     } else if(slow > 0) slow--;
     raf=requestAnimationFrame(loop);
   }
   function start(){ if(running||RM) return; running=true; raf=requestAnimationFrame(loop); }
   function stop(){ running=false; if(raf) cancelAnimationFrame(raf); raf=null; }
+
+  /* The planet redraws every pixel of its surface each frame — by far the
+     heaviest work on the page. It yields completely while scrolling. */
+  var wasSpinning = false;
+  window.addEventListener("yf:scrollstart", function(){ wasSpinning = running; stop(); });
+  window.addEventListener("yf:scrollend",   function(){ if(wasSpinning) start(); });
 
   size(); draw();
 
@@ -3735,60 +3789,56 @@ var FAQS = [
   });
 
   /**
-   * Razorpay checkout.
+   * Cashfree checkout.
    *
-   * The screen the candidate sees is updated by the handler below, but the
-   * application is only created by the server-side webhook. If the phone
-   * dies or the tab closes right after paying, the record is still made.
+   * Cashfree's own popup updates the screen, but the application is only
+   * ever created by the server-side webhook — never by anything that
+   * happens in this browser. If the phone dies or the tab closes right
+   * after paying, the record is still made; this function only decides
+   * what the candidate sees in the meantime.
    */
   function openCheckout(data, payload){
-    if(typeof Razorpay === "undefined"){
+    if(typeof Cashfree === "undefined"){
       showNote("Payment could not start. Check your connection and try again.");
-      el("paySubmit").disabled = false;
+      resetPayBtn(data.amount);
       return;
     }
 
-    var rzp = new Razorpay({
-      key: data.keyId,
-      order_id: data.order.id,
-      amount: data.order.amount,
-      currency: "INR",
-      name: "YoungFreedom",
-      description: "Processing fee \u00b7 " + data.appId,
-      image: "/img/team.jpg",
-      prefill: { name: payload.name, contact: payload.phone, email: payload.email || "" },
-      theme: { color: "#1B5CFF" },
-      handler: function(r){
-        fetch("/api/payments/order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderId: r.razorpay_order_id,
-            paymentId: r.razorpay_payment_id,
-            signature: r.razorpay_signature
-          })
-        }).finally(function(){
-          window.location.href = data.statusUrl;
-        });
-      },
-      modal: {
-        ondismiss: function(){
-          var btn = el("paySubmit");
-          btn.disabled = false;
-          btn.textContent = "Pay \u20B9" + data.amount + " & submit \u2192";
-          showNote("Payment was not completed. Your details are saved \u2014 you can pay now to finish.", true);
-        }
+    var cashfree = Cashfree({ mode: data.cashfreeEnv === "PRODUCTION" ? "production" : "sandbox" });
+
+    cashfree.checkout({
+      paymentSessionId: data.order.paymentSessionId,
+      redirectTarget: "_modal"
+    }).then(function(result){
+      if(result.error){
+        showNote(result.error.message || "The payment did not go through. Please try again.");
+        resetPayBtn(data.amount);
+        return;
       }
+      /* The popup closed either because payment finished or the candidate
+         backed out. Either way we ask our own server — never Cashfree's
+         client-side result — what actually happened to the order. */
+      fetch("/api/payments/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: data.order.id })
+      }).then(function(r){ return r.json(); }).then(function(v){
+        if(v && v.confirmed){
+          window.location.href = data.statusUrl;
+        } else {
+          showNote("Payment was not completed. Your details are saved \u2014 you can pay now to finish.", true);
+          resetPayBtn(data.amount);
+        }
+      }).catch(function(){
+        window.location.href = data.statusUrl;   // let the status page show the true state
+      });
     });
+  }
 
-    rzp.on("payment.failed", function(resp){
-      showNote((resp.error && resp.error.description) || "The payment failed. Please try again.");
-      var btn = el("paySubmit");
-      btn.disabled = false;
-      btn.textContent = "Pay \u20B9" + data.amount + " & submit \u2192";
-    });
-
-    rzp.open();
+  function resetPayBtn(amount){
+    var btn = el("paySubmit");
+    btn.disabled = false;
+    btn.textContent = "Pay \u20B9" + amount + " & submit \u2192";
   }
 
   go(1); updatePass();
@@ -3831,6 +3881,61 @@ var FAQS = [
   ["#marq",".pass",".marq-sect"].forEach(function(sel){
     var el = $(sel); if(el) io.observe(el);
   });
+})();
+
+
+/* =========================================================
+   12. DEFERRED IMAGES — fetch a photograph only when its
+       section is close, never all nine at first paint
+   ========================================================= */
+(function deferImages(){
+  var targets = [
+    { el: document.getElementById("accord"), cls: "img-ready" },
+    { el: $(".band"),    cls: "img-ready" },
+    { el: $(".counsel"), cls: "img-ready" }
+  ].filter(function(t){ return t.el; });
+
+  if(!("IntersectionObserver" in window)){
+    targets.forEach(function(t){ t.el.classList.add(t.cls); });
+    return;
+  }
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      e.target.classList.add("img-ready");
+      io.unobserve(e.target);
+    });
+  }, { rootMargin: "400px" });   /* start a little before it is needed */
+
+  targets.forEach(function(t){ io.observe(t.el); });
+})();
+
+/* =========================================================
+   13. SCROLL IDLE — canvases stop while the page is moving
+   ========================================================= */
+(function scrollIdle(){
+  if(RM) return;
+  /**
+   * While a finger is dragging the page, the browser is busy compositing.
+   * A canvas repainting 60 times a second competes for that same main
+   * thread, and the result is the small stutter people describe as
+   * "hanging". Pausing for the duration of the scroll costs nothing
+   * visually — nobody studies a rotating globe mid-swipe — and gives the
+   * scroll the whole frame budget.
+   */
+  var timer = null;
+  window.addEventListener("scroll", function(){
+    if(!document.body.classList.contains("is-scrolling")){
+      document.body.classList.add("is-scrolling");
+      window.dispatchEvent(new Event("yf:scrollstart"));
+    }
+    clearTimeout(timer);
+    timer = setTimeout(function(){
+      document.body.classList.remove("is-scrolling");
+      window.dispatchEvent(new Event("yf:scrollend"));
+    }, 140);
+  }, { passive: true });
 })();
 
 /* smooth anchor offset for the fixed nav */
