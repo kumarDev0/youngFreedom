@@ -20,7 +20,7 @@ const csp = [
   "frame-src https://sdk.cashfree.com https://api.cashfree.com https://sandbox.cashfree.com https://payments.cashfree.com https://payments-test.cashfree.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://sandbox.cashfree.com https://api.cashfree.com https://payments.cashfree.com https://payments-test.cashfree.com",
   "frame-ancestors 'none'",
   ...(isDev ? [] : ['upgrade-insecure-requests'])
 ].join('; ');
