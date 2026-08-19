@@ -3,6 +3,7 @@ import { connectDB } from '../../../../lib/db.js';
 import Application from '../../../../models/Application.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
 import { rateLimit, clientIp } from '../../../../lib/ratelimit.js';
+import { splitStatusParam } from '../../../../lib/statusToken.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -20,10 +21,7 @@ export async function GET(req, { params }) {
   if (!limit.ok) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
-    const raw = String(params.token || '');
-    const idx = raw.lastIndexOf('-');
-    const appId = raw.slice(0, idx);
-    const token = raw.slice(idx + 1);
+    const { appId, token } = splitStatusParam(params.token);
     if (!appId || !token) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
     await connectDB();

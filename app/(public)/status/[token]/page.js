@@ -1,4 +1,5 @@
 import { connectDB } from '../../../../lib/db.js';
+import { splitStatusParam } from '../../../../lib/statusToken.js';
 import Application from '../../../../models/Application.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
 import './status.css';
@@ -22,10 +23,7 @@ const ORDER = ['new', 'called', 'shortlisted', 'interviewed', 'placed'];
  * cannot see anybody else's record.
  */
 export default async function StatusPage({ params }) {
-  const raw = String(params.token || '');
-  const idx = raw.lastIndexOf('-');
-  const appId = raw.slice(0, idx);
-  const token = raw.slice(idx + 1);
+  const { appId, token } = splitStatusParam(params.token);
 
   await connectDB();
 
