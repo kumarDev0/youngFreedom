@@ -1960,10 +1960,12 @@ body.is-scrolling .acc-panel{
     </div>
     <div class="jobs-bar rv" id="filters">
       <button class="filter on" data-f="all">All roles</button>
+      <button class="filter" data-f="10th">10th</button>
+      <button class="filter" data-f="12th">12th</button>
       <button class="filter" data-f="iti">ITI / Trade</button>
       <button class="filter" data-f="diploma">Diploma</button>
-      <button class="filter" data-f="fresher">Fresher</button>
       <button class="filter" data-f="btech">B.Tech</button>
+      <button class="filter" data-f="graduation">Graduation</button>
       <span class="jobs-count"><b id="jobCount">12</b> roles live</span>
     </div>
     <div class="jobs" id="jobList"></div>
@@ -2279,8 +2281,8 @@ body.is-scrolling .acc-panel{
             <span class="count"><b id="msgCount">0</b>/300</span>
           </div>
           <div class="pay-row">
-            <div class="amt">₹249<small data-hi="एक बार का प्रोसेसिंग शुल्क">ONE-TIME PROCESSING FEE</small></div>
-            <button class="btn btn-lg" type="submit" id="paySubmit" data-hi="₹249 दें और आवेदन भेजें">Pay ₹249 &amp; submit →</button>
+            <div class="amt"><span id="feeAmt">₹249</span><small data-hi="एक बार का प्रोसेसिंग शुल्क">ONE-TIME PROCESSING FEE</small></div>
+            <button class="btn btn-lg" type="submit" id="paySubmit"><span id="paySubmitLabel">Pay ₹249 &amp; submit →</span></button>
           </div>
           <p style="margin-top:14px;font-size:.82rem;color:var(--steel-dk)"
              data-hi="सबमिट करने पर आप हमारी शर्तों से सहमत होते हैं। पेमेंट सुरक्षित गेटवे से होता है।">
@@ -2732,19 +2734,29 @@ var PARTNERS = [
  * than an empty page.
  */
 var JOBS = [
-  {t:"CNC Machine Operator",     c:"Divgi TTS",   loc:"Pune, Maharashtra",   min:18500,max:22000,tag:"iti",     qual:"ITI",      shift:"Day shift", stay:"Stay provided", open:4, days:2},
-  {t:"Assembly Line Technician", c:"Mahindra",    loc:"Nashik, Maharashtra", min:17200,max:20500,tag:"fresher", qual:"10th/12th",shift:"Rotational",stay:"Stay provided", open:12,days:1},
-  {t:"Electrical Maintenance",   c:"GE T&D India",loc:"Chennai, Tamil Nadu", min:21000,max:26000,tag:"diploma", qual:"Diploma",  shift:"Day shift", stay:"Canteen",       open:3, days:4}
+  {t:"CNC Machine Operator",     c:"Divgi TTS",   loc:"Pune, Maharashtra",   min:18500,max:22000,quals:["iti"],           qual:"ITI",             shift:"Day shift", stay:"Stay provided", open:4, days:2},
+  {t:"Assembly Line Technician", c:"Mahindra",    loc:"Nashik, Maharashtra", min:17200,max:20500,quals:["10th","12th"],   qual:"10th / 12th",     shift:"Rotational",stay:"Stay provided", open:12,days:1},
+  {t:"Electrical Maintenance",   c:"GE T&D India",loc:"Chennai, Tamil Nadu", min:21000,max:26000,quals:["diploma"],       qual:"Diploma",         shift:"Day shift", stay:"Canteen",       open:3, days:4}
 ];
 
-/** The filter chips work on one bucket per job; a job open to several
- *  qualifications is filed under the first one that matches. */
-function bucketFor(quals){
-  var q = (quals || []).join(" ").toLowerCase();
-  if (q.indexOf("b.tech") > -1) return "btech";
-  if (q.indexOf("diploma") > -1) return "diploma";
-  if (q.indexOf("iti") > -1) return "iti";
-  return "fresher";
+/**
+ * A job can be open to several qualifications at once (a recruiter can tick
+ * 10th, 12th and ITI on the same posting). Filtering used to keep only the
+ * first match, so a job with all three would only ever show under one
+ * filter — clicking "10th" could hide a job that genuinely accepts 10th
+ * pass candidates. This returns every bucket the job matches, and the
+ * filter checks membership in that list instead of an exact single tag.
+ */
+function qualsFor(quals){
+  var list = (quals || []).map(function(q){ return String(q).toLowerCase(); });
+  var out = [];
+  if (list.some(function(q){ return q.indexOf("10th") > -1; })) out.push("10th");
+  if (list.some(function(q){ return q.indexOf("12th") > -1; })) out.push("12th");
+  if (list.some(function(q){ return q.indexOf("iti") > -1; })) out.push("iti");
+  if (list.some(function(q){ return q.indexOf("diploma") > -1; })) out.push("diploma");
+  if (list.some(function(q){ return q.indexOf("b.tech") > -1 || q.indexOf("btech") > -1; })) out.push("btech");
+  if (list.some(function(q){ return q.indexOf("grad") > -1; })) out.push("graduation");
+  return out.length ? out : ["10th", "12th"];   // an unspecified job defaults to the widest audience
 }
 
 function daysSince(iso){
@@ -2761,7 +2773,7 @@ function fromApi(j){
     loc: j.location || "",
     min: (j.salary && j.salary.min) || 0,
     max: (j.salary && j.salary.max) || 0,
-    tag: bucketFor(j.qualification),
+    quals: qualsFor(j.qualification),
     qual: (j.qualification || []).join(" / ") || "Any",
     shift: j.shift || "Day shift",
     stay: j.stay || "",
@@ -2813,7 +2825,8 @@ var FAQS = [
 
   function cardHTML(o,i){
     var few = o.open <= 3;
-    return '<article class="job rv tilt" data-tag="'+o.tag+'" data-pay="'+o.min+'" data-open="'+o.open+'" '
+    var quals = o.quals || ["10th","12th"];
+    return '<article class="job rv tilt" data-quals="'+quals.join(" ")+'" data-pay="'+o.min+'" data-open="'+o.open+'" '
        +   'data-job="'+(o.id||"")+'" data-title="'+esc(o.t)+'" '
        +   'data-days="'+o.days+'" data-find="'+(o.t+" "+o.c+" "+o.loc).toLowerCase().replace(/"/g,"")+'">'
        +   '<span class="job-accent" aria-hidden="true"></span>'
@@ -2861,7 +2874,7 @@ var FAQS = [
   function applyState(){
     var cards = $$(".job", list), shown = 0;
     cards.forEach(function(c){
-      var okF = state.f==="all" || c.dataset.tag===state.f;
+      var okF = state.f==="all" || (" "+c.dataset.quals+" ").indexOf(" "+state.f+" ") > -1;
       var okQ = !state.q || c.dataset.find.indexOf(state.q) > -1;
       var show = okF && okQ;
       c.classList.toggle("hide", !show);
@@ -3676,6 +3689,7 @@ var FAQS = [
       var hi = b.dataset.lang === "hi";
       document.documentElement.lang = hi ? "hi" : "en";
       nodes.forEach(function(n){ n.textContent = hi ? n.dataset.hi : n.dataset.en; });
+      if(window.__yfUpdateFee) window.__yfUpdateFee();
     });
   });
 })();
@@ -3736,6 +3750,38 @@ var FAQS = [
   var bar = el("stepBar"), dots = $$(".wiz-dots li"), back = el("wizBack"), next = el("wizNext");
   var fn=el("fn"), fp=el("fp"), fd=el("fd"), ft=el("ft"), fq=el("fq"), fe=el("fe"), fm=el("fm"), fr=el("fr");
 
+  /* Mirrors lib/fees.js exactly — the server always has the final word on
+     what is charged, but the candidate should never see one number on the
+     button and a different one in the Cashfree window a second later. */
+  var FEE_TIERS = { "10th":149, "12th":149, "ITI":149, "Diploma":249, "B.Tech":249, "Graduation":249 };
+  /**
+   * Mirrors lib/fees.js exactly. The server always has the final word on
+   * what is actually charged, but the candidate should never see one
+   * number on this button and a different one a second later in the
+   * Cashfree window.
+   *
+   * This owns the button label directly in both languages rather than
+   * going through the site-wide [data-hi] translator: that system snapshots
+   * each element's text once at page load and replays it on every language
+   * switch, which would silently put the stale ₹249 back the moment
+   * someone toggled EN/हिं after picking a qualification.
+   */
+  function updateFee(){
+    var amount = FEE_TIERS[fq.value] || 249;    // 249 only as a placeholder before a choice is made
+    var hi = document.documentElement.lang === "hi";
+
+    var feeAmt = el("feeAmt");
+    if(feeAmt) feeAmt.textContent = "\u20B9" + amount;
+
+    var label = el("paySubmitLabel");
+    if(label){
+      label.textContent = hi
+        ? "\u20B9" + amount + " \u0926\u0947\u0902 \u0914\u0930 \u0906\u0935\u0947\u0926\u0928 \u092d\u0947\u091c\u0947\u0902 \u2192"
+        : "Pay \u20B9" + amount + " & submit \u2192";
+    }
+  }
+  window.__yfUpdateFee = updateFee;   // called again from the language toggle, below
+
   /* ---- live pass ---- */
   function pretty(v){ return (v||"").trim(); }
   function updatePass(){
@@ -3774,6 +3820,7 @@ var FAQS = [
       wrap.classList.remove("bad");
       if(cb) cb();
       updatePass();
+      updateFee();
     });
   }
   group(el("qualChips"), fq);
@@ -4046,7 +4093,7 @@ var FAQS = [
     btn.textContent = "Pay \u20B9" + amount + " & submit \u2192";
   }
 
-  go(1); updatePass();
+  go(1); updatePass(); updateFee();
 })();
 
 
