@@ -2,6 +2,7 @@ import { connectDB } from '../../../../lib/db.js';
 import { splitStatusParam } from '../../../../lib/statusToken.js';
 import Application from '../../../../models/Application.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
+import RedirectTimer from './RedirectTimer.js';
 import './status.css';
 
 export const dynamic = 'force-dynamic';
@@ -125,6 +126,8 @@ export default async function StatusPage({ params }) {
         <p className="st-note">Applied on {new Date(app.createdAt).toLocaleDateString('en-IN',
           { day: 'numeric', month: 'long', year: 'numeric' })}</p>
       </div>
+
+      <RedirectTimer seconds={15} />
     </main>
   );
 }

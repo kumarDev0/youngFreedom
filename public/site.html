@@ -1137,6 +1137,33 @@ select option{background:#0A1226;color:#EAF3FF}
 .acc .ans{overflow:hidden;height:0;transition:height .45s var(--ease-out)}
 .acc .ans p{padding-bottom:24px;color:#4A5C7C;font-size:.97rem;max-width:70ch}
 
+/* ---------- track my application ---------- */
+.track-sect{padding-block:clamp(48px,7vw,80px)}
+.track-card{
+  max-width:900px;margin-inline:auto;padding:clamp(28px,4vw,44px);
+  display:flex;flex-wrap:wrap;align-items:center;gap:clamp(20px,3vw,36px);
+  border:1px solid var(--line);
+  background:linear-gradient(150deg,rgba(27,92,255,.10),rgba(255,255,255,.03));
+}
+.track-copy{flex:1 1 320px;min-width:0}
+.track-form{
+  flex:1 1 300px;display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;
+}
+.track-form .input-wrap{flex:1 1 200px;min-width:0}
+.track-form .btn{flex:0 0 auto;white-space:nowrap}
+.track-msg{
+  flex-basis:100%;margin:0;padding:12px 14px;font-size:.85rem;line-height:1.5;
+  border:1px solid var(--line);
+}
+.track-msg.ok{color:var(--cyan);border-color:rgba(99,226,255,.28);background:rgba(99,226,255,.06)}
+.track-msg.err{color:#FF9A9A;border-color:rgba(255,138,155,.3);background:rgba(255,138,155,.07)}
+
+@media(max-width:760px){
+  .track-card{flex-direction:column;align-items:stretch;text-align:center}
+  .track-form{flex-direction:column}
+  .track-form .btn{width:100%;justify-content:center}
+}
+
 /* ---------- contact ---------- */
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:start}
 .link-card{
@@ -2165,6 +2192,33 @@ body.is-scrolling .acc-panel{
   </div>
 </section>
 
+<!-- ============ TRACK STATUS ============ -->
+<section class="sect track-sect" id="track">
+  <div class="grid-bg" aria-hidden="true" style="opacity:.25"></div>
+  <div class="wrap">
+    <div class="track-card rv">
+      <div class="track-copy">
+        <span class="eyebrow" data-hi="पहले से आवेदन किया है?">Already applied?</span>
+        <h2 class="h-md" style="margin:14px 0 10px" data-hi="अपना आवेदन ट्रैक करें">Track your application</h2>
+        <p class="lead" style="margin-bottom:0" data-hi="अपना मोबाइल नंबर डालिए — हम आपका स्टेटस पेज दिखा देंगे, भले ही आपने पुराना लिंक खो दिया हो।">
+          Enter the mobile number you applied with. We will take you straight to your status page —
+          even if you lost the original link.
+        </p>
+      </div>
+
+      <form class="track-form" id="trackForm" novalidate>
+        <div class="input-wrap">
+          <span class="prefix">+91</span>
+          <input id="trackPhone" type="tel" inputmode="numeric" maxlength="10"
+                 placeholder="98765 43210" pattern="[6-9][0-9]{9}" autocomplete="tel" required>
+        </div>
+        <button class="btn" type="submit" id="trackBtn" data-hi="स्टेटस देखें">Find my status →</button>
+      </form>
+      <p class="track-msg" id="trackMsg" hidden></p>
+    </div>
+  </div>
+</section>
+
 <!-- ============ CONTACT ============ -->
 <section class="sect" id="contact">
   <div class="beam" aria-hidden="true"></div>
@@ -2244,7 +2298,7 @@ body.is-scrolling .acc-panel{
         <a href="#batches" data-hi="बैच वॉल">Batch wall</a>
       </div>
       <div><h4>Candidates</h4>
-        <a href="#apply" data-hi="आवेदन करें">Apply now</a><a href="#faq" data-hi="सवाल-जवाब">FAQ</a>
+        <a href="#apply" data-hi="आवेदन करें">Apply now</a><a href="#track" data-hi="आवेदन ट्रैक करें">Track status</a><a href="#faq" data-hi="सवाल-जवाब">FAQ</a>
         <a href="#expansion" data-hi="नए शहर">New cities</a>
       </div>
       <div><h4>Reach us</h4>
@@ -3942,6 +3996,57 @@ var FAQS = [
       window.dispatchEvent(new Event("yf:scrollend"));
     }, 140);
   }, { passive: true });
+})();
+
+
+/* =========================================================
+   14. TRACK MY APPLICATION — phone number -> status link
+   ========================================================= */
+(function trackStatus(){
+  var form = document.getElementById("trackForm");
+  if(!form) return;
+  var phone = document.getElementById("trackPhone");
+  var btn = document.getElementById("trackBtn");
+  var msg = document.getElementById("trackMsg");
+
+  function show(text, ok){
+    msg.textContent = text;
+    msg.className = "track-msg " + (ok ? "ok" : "err");
+    msg.hidden = false;
+  }
+
+  form.addEventListener("submit", function(e){
+    e.preventDefault();
+    var clean = phone.value.replace(/\D/g, "");
+    if(clean.length === 12 && clean.indexOf("91") === 0) clean = clean.slice(2);
+    if(!/^[6-9]\d{9}$/.test(clean)){
+      show("Enter a valid 10-digit mobile number.", false);
+      return;
+    }
+
+    var original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Searching\u2026";
+    msg.hidden = true;
+
+    fetch("/api/status/lookup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: clean })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+      .then(function(res){
+        if(res.ok && res.data.statusUrl){
+          show("Found it \u2014 taking you there\u2026", true);
+          setTimeout(function(){ window.location.href = res.data.statusUrl; }, 500);
+        } else {
+          show(res.data.error || "No application found for that number.", false);
+          btn.disabled = false; btn.textContent = original;
+        }
+      })
+      .catch(function(){
+        show("Something went wrong. Please try again.", false);
+        btn.disabled = false; btn.textContent = original;
+      });
+  });
 })();
 
 /* smooth anchor offset for the fixed nav */
