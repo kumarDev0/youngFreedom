@@ -1138,32 +1138,148 @@ select option{background:#0A1226;color:#EAF3FF}
 .acc .ans p{padding-bottom:24px;color:#4A5C7C;font-size:.97rem;max-width:70ch}
 
 /* ---------- track my application ---------- */
-.track-sect{padding-block:clamp(48px,7vw,80px)}
-.track-card{
-  max-width:900px;margin-inline:auto;padding:clamp(28px,4vw,44px);
-  display:flex;flex-wrap:wrap;align-items:center;gap:clamp(20px,3vw,36px);
+.track-sect{position:relative;padding-block:clamp(64px,9vw,110px);overflow:hidden}
+.track-glow{
+  position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(46% 60% at 12% 30%,rgba(27,92,255,.22),transparent 70%),
+    radial-gradient(38% 50% at 88% 75%,rgba(99,226,255,.14),transparent 72%);
+}
+.track-shell{
+  position:relative;z-index:1;display:grid;grid-template-columns:1.05fr .95fr;
+  gap:clamp(30px,5vw,64px);align-items:center;
+}
+
+/* ---- left: editorial headline ---- */
+.track-side{max-width:52ch}
+.track-tag{
+  display:inline-flex;align-items:center;gap:9px;padding:8px 14px;
+  border:1px solid rgba(99,226,255,.24);background:rgba(99,226,255,.06);
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:22px;
+}
+.track-h{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.03em;line-height:1.06;
+  font-size:clamp(2rem,4.4vw,3.05rem);margin-bottom:18px;
+}
+.track-h .ital{
+  font-style:italic;font-weight:600;
+  background:linear-gradient(100deg,var(--white) 6%,var(--cyan) 55%,var(--signal-2) 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.track-sub{font-size:clamp(.95rem,1.3vw,1.05rem);color:var(--steel);line-height:1.65;margin-bottom:30px}
+.track-points{list-style:none;display:grid;gap:14px}
+.track-points li{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--porcelain)}
+.track-points svg{
+  width:19px;height:19px;flex:0 0 19px;padding:3px;
+  stroke:var(--cyan);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;
+  border:1px solid rgba(99,226,255,.3);background:rgba(99,226,255,.06);
+}
+
+/* ---- right: the glass panel with the form ---- */
+.track-panel{
+  position:relative;padding:clamp(30px,4vw,44px);
   border:1px solid var(--line);
-  background:linear-gradient(150deg,rgba(27,92,255,.10),rgba(255,255,255,.03));
+  background:linear-gradient(158deg,rgba(255,255,255,.075),rgba(255,255,255,.015));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:0 40px 90px -44px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08);
 }
-.track-copy{flex:1 1 320px;min-width:0}
-.track-form{
-  flex:1 1 300px;display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;
+/* corner brackets — a small, classic instrument-panel detail */
+.track-panel-corner{position:absolute;width:22px;height:22px;pointer-events:none}
+.track-panel-corner.tl{top:-1px;left:-1px;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan)}
+.track-panel-corner.br{bottom:-1px;right:-1px;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan)}
+
+.track-eyebrow{
+  display:block;font-family:var(--f-mono);font-size:.6rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--steel-dk);margin-bottom:20px;
 }
-.track-form .input-wrap{flex:1 1 200px;min-width:0}
-.track-form .btn{flex:0 0 auto;white-space:nowrap}
+
+.track-form{display:flex;flex-direction:column;gap:16px}
+.track-input{
+  position:relative;display:flex;align-items:center;gap:12px;
+  border:1px solid var(--line-2, rgba(255,255,255,.14));background:rgba(255,255,255,.04);
+  padding:0 18px;height:64px;transition:background .3s var(--ease),border-color .3s var(--ease);
+}
+.track-prefix{
+  font-family:var(--f-mono);font-size:1rem;letter-spacing:.04em;color:var(--steel);
+  padding-right:14px;border-right:1px solid rgba(255,255,255,.14);
+}
+.track-input input{
+  flex:1;min-width:0;height:100%;border:0;background:transparent;color:var(--porcelain);
+  font-family:var(--f-display);font-size:clamp(1.2rem,2.6vw,1.5rem);font-weight:600;
+  letter-spacing:.06em;
+}
+.track-input input::placeholder{color:#3B4E70;font-weight:500}
+.track-input input:focus{outline:none}
+/* an animated underline instead of the default focus ring, so the whole
+   panel reads as one deliberate instrument rather than a generic form */
+.track-input-line{
+  position:absolute;left:0;right:0;bottom:-1px;height:2px;
+  background:linear-gradient(90deg,var(--signal),var(--cyan));
+  transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease-out);
+}
+.track-input:focus-within{background:rgba(27,92,255,.06)}
+.track-input:focus-within .track-input-line{transform:scaleX(1)}
+
+.track-btn{
+  position:relative;display:flex;align-items:center;justify-content:center;gap:10px;
+  height:58px;cursor:pointer;overflow:hidden;isolation:isolate;
+  border:1px solid rgba(255,255,255,.18);color:#fff;
+  font-family:var(--f-body);font-weight:700;font-size:.8rem;letter-spacing:.13em;text-transform:uppercase;
+  background:linear-gradient(135deg,#3C8BFF,var(--signal) 60%,#0F3FCC);
+  box-shadow:0 16px 36px -16px rgba(27,92,255,.95),inset 0 1px 0 rgba(255,255,255,.32);
+  transition:transform .35s var(--ease-out),box-shadow .35s var(--ease-out),opacity .2s;
+}
+.track-btn::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(100deg,transparent 22%,rgba(255,255,255,.4) 50%,transparent 78%);
+  transform:translateX(-120%);transition:transform .8s var(--ease-out);
+}
+.track-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 22px 46px -18px rgba(27,92,255,1)}
+.track-btn:hover:not(:disabled)::after{transform:translateX(120%)}
+.track-btn:disabled{opacity:.55;cursor:not-allowed}
+.track-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .3s var(--ease-out)}
+.track-btn:hover:not(:disabled) svg{transform:translateX(3px)}
+
 .track-msg{
-  flex-basis:100%;margin:0;padding:12px 14px;font-size:.85rem;line-height:1.5;
-  border:1px solid var(--line);
+  margin:0;padding:13px 16px;font-size:.85rem;line-height:1.5;border:1px solid var(--line);
+  animation:trackMsgIn .3s var(--ease-out) both;
 }
-.track-msg.ok{color:var(--cyan);border-color:rgba(99,226,255,.28);background:rgba(99,226,255,.06)}
-.track-msg.err{color:#FF9A9A;border-color:rgba(255,138,155,.3);background:rgba(255,138,155,.07)}
+@keyframes trackMsgIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.track-msg.ok{color:var(--cyan);border-color:rgba(99,226,255,.3);background:rgba(99,226,255,.07)}
+.track-msg.err{color:#FF9A9A;border-color:rgba(255,138,155,.32);background:rgba(255,138,155,.08)}
 
-@media(max-width:760px){
-  .track-card{flex-direction:column;align-items:stretch;text-align:center}
-  .track-form{flex-direction:column}
-  .track-form .btn{width:100%;justify-content:center}
+.track-panel-note{
+  display:block;margin-top:20px;text-align:center;font-family:var(--f-mono);
+  font-size:.58rem;letter-spacing:.1em;color:var(--steel-dk);line-height:1.6;
 }
 
+/* ---------- responsive ---------- */
+@media(max-width:1080px){
+  .track-shell{grid-template-columns:1fr;gap:38px}
+  .track-side{max-width:100%;text-align:center}
+  .track-tag{margin-inline:auto}
+  .track-points{justify-items:center}
+  .track-points li{justify-content:center}
+}
+@media(max-width:640px){
+  .track-sect{padding-block:52px}
+  .track-panel{padding:24px 20px}
+  .track-input{height:58px;padding:0 14px;gap:10px}
+  .track-prefix{font-size:.9rem;padding-right:10px}
+  .track-input input{font-size:1.15rem;letter-spacing:.03em}
+  .track-btn{height:54px;font-size:.74rem}
+  .track-points{gap:11px}
+  .track-points li{font-size:.85rem;text-align:left;justify-content:flex-start}
+  .track-h{font-size:clamp(1.7rem,7vw,2.1rem)}
+}
+@media(max-width:380px){
+  .track-panel{padding:20px 16px}
+  .track-panel-corner{width:16px;height:16px}
+}
+
+/* ---------- contact ---------- */
 /* ---------- contact ---------- */
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:start}
 .link-card{
@@ -2194,27 +2310,56 @@ body.is-scrolling .acc-panel{
 
 <!-- ============ TRACK STATUS ============ -->
 <section class="sect track-sect" id="track">
-  <div class="grid-bg" aria-hidden="true" style="opacity:.25"></div>
+  <div class="track-glow" aria-hidden="true"></div>
+  <div class="grid-bg" aria-hidden="true" style="opacity:.3"></div>
+
   <div class="wrap">
-    <div class="track-card rv">
-      <div class="track-copy">
-        <span class="eyebrow" data-hi="पहले से आवेदन किया है?">Already applied?</span>
-        <h2 class="h-md" style="margin:14px 0 10px" data-hi="अपना आवेदन ट्रैक करें">Track your application</h2>
-        <p class="lead" style="margin-bottom:0" data-hi="अपना मोबाइल नंबर डालिए — हम आपका स्टेटस पेज दिखा देंगे, भले ही आपने पुराना लिंक खो दिया हो।">
-          Enter the mobile number you applied with. We will take you straight to your status page —
-          even if you lost the original link.
+    <div class="track-shell rv">
+
+      <div class="track-side">
+        <span class="track-tag"><i class="dot live"></i><span data-hi="पहले से आवेदन किया है?">Already applied?</span></span>
+        <h2 class="track-h" data-hi="अपना सफ़र यहीं से, फिर देखिए।">
+          Find your <span class="ital">journey,</span><br>right where you left it.
+        </h2>
+        <p class="track-sub" data-hi="बस वही मोबाइल नंबर डालिए जिससे आवेदन किया था — हम सीधे आपके स्टेटस पेज पर ले जाएँगे, चाहे पुराना लिंक कहीं भी खो गया हो।">
+          Enter the mobile number you applied with. No login, no OTP, no waiting —
+          we take you straight to your status page, even if the original link is long gone.
         </p>
+
+        <ul class="track-points">
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span data-hi="कोई पासवर्ड याद रखने की ज़रूरत नहीं">No password to remember</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span data-hi="असली स्टेज तुरंत दिखेगा">See your real stage instantly</span></li>
+          <li><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><span data-hi="वही नंबर, हर बार काम करेगा">Works every time, same number</span></li>
+        </ul>
       </div>
 
-      <form class="track-form" id="trackForm" novalidate>
-        <div class="input-wrap">
-          <span class="prefix">+91</span>
-          <input id="trackPhone" type="tel" inputmode="numeric" maxlength="10"
-                 placeholder="98765 43210" pattern="[6-9][0-9]{9}" autocomplete="tel" required>
-        </div>
-        <button class="btn" type="submit" id="trackBtn" data-hi="स्टेटस देखें">Find my status →</button>
-      </form>
-      <p class="track-msg" id="trackMsg" hidden></p>
+      <div class="track-panel">
+        <span class="track-panel-corner tl" aria-hidden="true"></span>
+        <span class="track-panel-corner br" aria-hidden="true"></span>
+
+        <span class="track-eyebrow" data-hi="अपना नंबर डालें">Enter your number</span>
+
+        <form class="track-form" id="trackForm" novalidate>
+          <label class="track-input" for="trackPhone">
+            <span class="track-prefix">+91</span>
+            <input id="trackPhone" type="tel" inputmode="numeric" maxlength="10"
+                   placeholder="98765 43210" pattern="[6-9][0-9]{9}" autocomplete="tel" required>
+            <span class="track-input-line" aria-hidden="true"></span>
+          </label>
+
+          <button class="track-btn" type="submit" id="trackBtn">
+            <span data-hi="मेरा स्टेटस देखें">Find my status</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+
+        <p class="track-msg" id="trackMsg" hidden></p>
+
+        <span class="track-panel-note" data-hi="आपका डेटा सुरक्षित है — केवल वही नंबर मैच करने पर दिखेगा">
+          Private &amp; secure — only an exact number match unlocks your status
+        </span>
+      </div>
+
     </div>
   </div>
 </section>
@@ -4007,12 +4152,17 @@ var FAQS = [
   if(!form) return;
   var phone = document.getElementById("trackPhone");
   var btn = document.getElementById("trackBtn");
+  var btnLabel = btn ? btn.querySelector("span") : null;   // icon stays, only the label changes
   var msg = document.getElementById("trackMsg");
 
   function show(text, ok){
     msg.textContent = text;
     msg.className = "track-msg " + (ok ? "ok" : "err");
     msg.hidden = false;
+  }
+  function setBtn(text, disabled){
+    if(btnLabel) btnLabel.textContent = text;
+    btn.disabled = disabled;
   }
 
   form.addEventListener("submit", function(e){
@@ -4024,8 +4174,8 @@ var FAQS = [
       return;
     }
 
-    var original = btn.textContent;
-    btn.disabled = true; btn.textContent = "Searching\u2026";
+    var original = btnLabel ? btnLabel.textContent : "";
+    setBtn("Searching\u2026", true);
     msg.hidden = true;
 
     fetch("/api/status/lookup", {
@@ -4039,12 +4189,12 @@ var FAQS = [
           setTimeout(function(){ window.location.href = res.data.statusUrl; }, 500);
         } else {
           show(res.data.error || "No application found for that number.", false);
-          btn.disabled = false; btn.textContent = original;
+          setBtn(original, false);
         }
       })
       .catch(function(){
         show("Something went wrong. Please try again.", false);
-        btn.disabled = false; btn.textContent = original;
+        setBtn(original, false);
       });
   });
 })();
