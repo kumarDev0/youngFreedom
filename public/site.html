@@ -1356,10 +1356,49 @@ body.is-scrolling .mobar{
   backdrop-filter:none;-webkit-backdrop-filter:none;
 }
 
+
+/* ============================================================
+   OFF-SCREEN SECTION SKIPPING
+   ============================================================
+   For a page this long, the browser still has to keep every section's
+   layout, style and paint information ready even while it is nowhere near
+   the viewport — that upkeep is real, recurring work on every scroll frame
+   for a page this size, not a one-time cost.
+
+   content-visibility:auto tells the browser to skip that upkeep entirely
+   for a box until it is about to be scrolled into view, at which point it
+   is measured and painted like normal — the visual result is identical,
+   only the work happens later, right when it is needed instead of the
+   whole time it is not.
+
+   This was deliberately avoided once before: it can stop an
+   IntersectionObserver from ever firing for elements inside a skipped box,
+   which silently left a batch of images invisible. The reveal system's own
+   safety net — the two setTimeout fallbacks in the "REVEAL + COUNTERS"
+   module — exists specifically to catch exactly that case, so this is safe
+   to use now. Browsers without support (older Safari, older Firefox)
+   simply ignore both properties and render these sections exactly as
+   before; nothing breaks there either.
+
+   The hero and the expansion/globe section are deliberately left out: both
+   run a canvas that reads its container's real dimensions to size its
+   drawing buffer, and a box that is still "auto"-skipped when that
+   measurement happens would size the canvas wrong.
+*/
+#placements{content-visibility:auto;contain-intrinsic-size:auto 1000px}
+#batches{content-visibility:auto;contain-intrinsic-size:auto 900px}
+#faq{content-visibility:auto;contain-intrinsic-size:auto 700px}
+#contact{content-visibility:auto;contain-intrinsic-size:auto 900px}
+footer{content-visibility:auto;contain-intrinsic-size:auto 500px}
+
 /* ---------- reveal ---------- */
-.rv{opacity:0;transform:translateY(26px);transition:opacity .8s var(--ease-out),transform .8s var(--ease-out)}
+/* Shorter distance and duration than before: each reveal now costs the
+   compositor less total frame-time, which matters most exactly when a fast
+   scroll crosses several .rv elements' thresholds within the same frame —
+   the visual effect is barely different, the GPU work per element is. */
+.rv{opacity:0;transform:translateY(14px);transition:opacity .45s var(--ease-out),transform .45s var(--ease-out)}
 .rv.in{opacity:1;transform:none}
-.rv-d1{transition-delay:.07s}.rv-d2{transition-delay:.14s}.rv-d3{transition-delay:.21s}.rv-d4{transition-delay:.28s}
+.rv-d1{transition-delay:.05s}.rv-d2{transition-delay:.1s}.rv-d3{transition-delay:.15s}.rv-d4{transition-delay:.2s}
 
 /* ---------- responsive ---------- */
 @media(max-width:1180px){
@@ -1447,6 +1486,17 @@ body.is-scrolling .mobar{
   .duo>.duo-img{filter:grayscale(.25) contrast(1.06) brightness(.94)}
   .btn-ghost::before{opacity:1;inset:5px}
   .reach-row::before,.link-card{transform:none}
+
+  /* These pointer-tracking spotlight pseudo-elements only ever get their
+     --mx/--my set by the .tilt JS module, and that module refuses to
+     attach on any device without a fine (mouse-type) pointer. On a touch
+     screen they can never once become visible — but declaring an opacity
+     transition on them is enough for some browsers to promote each one to
+     its own compositor layer anyway, purely on the strength of the CSS,
+     which on a page with a dozen job cards is a dozen pointless layers to
+     carry through every scroll frame. Removing them here costs nothing
+     visually and removes that layer overhead entirely. */
+  .card::before,.job::before{content:none}
 }
 
 /* --- phones --- */
@@ -3030,9 +3080,23 @@ var FAQS = [
   if(!("IntersectionObserver" in window) || RM){
     els.forEach(function(e){ e.classList.add("in"); });
   } else {
+    /* will-change is added immediately before the transition starts and
+       removed the moment it ends — giving the compositor advance notice
+       for the ~450ms it actually animates, without leaving dozens of
+       layers permanently promoted (and consuming GPU memory) for the rest
+       of the session, which is the usual cost of using will-change too
+       liberally. */
+    function revealOne(el){
+      el.style.willChange = "opacity, transform";
+      el.classList.add("in");
+      el.addEventListener("transitionend", function done(){
+        el.style.willChange = "";
+        el.removeEventListener("transitionend", done);
+      });
+    }
     var io = new IntersectionObserver(function(entries){
       entries.forEach(function(en){
-        if(en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); }
+        if(en.isIntersecting){ revealOne(en.target); io.unobserve(en.target); }
       });
     }, {rootMargin:"0px 0px -8% 0px", threshold:.08});
     els.forEach(function(e){ io.observe(e); });
@@ -3045,12 +3109,12 @@ var FAQS = [
     /* safety net — if anything is still hidden after the page settles, show it */
     setTimeout(function(){
       $$(".rv:not(.in)").forEach(function(e){
-        if(e.getBoundingClientRect().top < window.innerHeight*2) e.classList.add("in");
+        if(e.getBoundingClientRect().top < window.innerHeight*2) revealOne(e);
       });
     }, 2500);
     window.addEventListener("load", function(){
       setTimeout(function(){ $$(".rv:not(.in)").forEach(function(e){
-        if(e.getBoundingClientRect().top < window.innerHeight) e.classList.add("in");
+        if(e.getBoundingClientRect().top < window.innerHeight) revealOne(e);
       }); }, 400);
     });
   }
