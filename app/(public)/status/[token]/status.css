@@ -45,7 +45,7 @@
   border:1px solid rgba(255,255,255,.12);
   background:linear-gradient(158deg,rgba(255,255,255,.07),rgba(255,255,255,.016));
   box-shadow:0 40px 90px -40px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.1);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   animation:stCardIn .5s var(--ease-out) both;
 }
 @keyframes stCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
