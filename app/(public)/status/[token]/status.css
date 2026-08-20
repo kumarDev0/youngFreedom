@@ -1,88 +1,150 @@
 /* The candidate's status page. Same language as the site, but calmer —
-   someone reads this once, on a phone, often anxious about their money. */
+   someone reads this once, on a phone, often anxious about their money.
+   Fonts (Clash Display / Satoshi / JetBrains Mono) are loaded once in the
+   root app/layout.js, which wraps every route including this one. */
 :root{
-  --ink:#04091A; --signal:#1B5CFF; --cyan:#63E2FF; --mint:#2ED3C6;
+  --ink:#04091A; --signal:#1B5CFF; --signal-2:#3C8BFF; --cyan:#63E2FF; --mint:#2ED3C6;
   --porcelain:#F2F6FD; --steel:#8FA3C4; --steel-dk:#5A6E90;
   --line:rgba(255,255,255,.09);
   --f-display:"Clash Display","Satoshi",system-ui,sans-serif;
   --f-body:"Satoshi",system-ui,-apple-system,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --ease-out:cubic-bezier(.16,1,.3,1);
 }
 .st-wrap{
-  min-height:100vh;min-height:100svh;display:grid;place-items:center;
+  position:relative;min-height:100vh;min-height:100svh;display:grid;place-items:center;
   padding:24px 20px;font-family:var(--f-body);color:var(--porcelain);
-  -webkit-text-size-adjust:100%;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
   background:
     radial-gradient(48% 42% at 20% 10%,rgba(27,92,255,.26),transparent 70%),
     radial-gradient(40% 40% at 85% 88%,rgba(99,226,255,.12),transparent 72%),
     linear-gradient(168deg,#071433 0%,#04091A 55%,#02050D 100%);
 }
+
+/* ---------- exit route: reached from a payment redirect or a phone-number
+   lookup, either way a full-screen page with no way out feels like a trap.
+   This sits above the card at every state — not found, pending, confirmed. ---------- */
+.st-back{
+  position:absolute;top:max(18px,env(safe-area-inset-top));
+  right:max(18px,env(safe-area-inset-right));
+  z-index:5;display:inline-flex;align-items:center;gap:7px;
+  padding:9px 14px 9px 11px;text-decoration:none;color:var(--steel);
+  border:1px solid rgba(255,255,255,.14);background:rgba(8,17,40,.55);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  font-family:var(--f-mono);font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;
+  transition:color .25s var(--ease-out),border-color .25s var(--ease-out),transform .25s var(--ease-out);
+}
+.st-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .25s var(--ease-out)}
+.st-back:hover{color:#fff;border-color:rgba(99,226,255,.35);transform:translateX(-2px)}
+.st-back:hover svg{transform:translateX(-2px)}
+
+/* ---------- the card ---------- */
 .st-card{
-  width:100%;max-width:540px;padding:clamp(24px,5vw,38px);
+  position:relative;width:100%;max-width:540px;padding:clamp(28px,5vw,42px);
   border:1px solid rgba(255,255,255,.12);
   background:linear-gradient(158deg,rgba(255,255,255,.07),rgba(255,255,255,.016));
   box-shadow:0 40px 90px -40px rgba(0,0,0,.95),inset 0 1px 0 rgba(255,255,255,.1);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  animation:stCardIn .5s var(--ease-out) both;
 }
-.st-eyebrow{display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--f-mono);font-size:.58rem;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--cyan)}
-.st-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);
+@keyframes stCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* a hairline gradient along the top edge — the same signature the rest of
+   the site uses on its glass panels, so this still reads as YoungFreedom */
+.st-card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--signal),transparent);
+  opacity:.65;
+}
+
+.st-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--f-mono);font-size:.62rem;font-weight:500;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--cyan);
+}
+.st-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex:0 0 7px;
   box-shadow:0 0 10px var(--mint)}
-.st-card h1{font-family:var(--f-display);font-size:clamp(1.5rem,5vw,1.85rem);
-  font-weight:600;letter-spacing:-.035em;margin:14px 0 10px}
-.st-sub{font-size:.92rem;color:var(--steel);line-height:1.6;margin-bottom:24px}
 
-.st-meta{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-bottom:26px;
-  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07)}
-.st-meta div{padding:14px;background:#070E22}
-.st-meta span{display:block;font-family:var(--f-mono);font-size:.54rem;
-  letter-spacing:.15em;text-transform:uppercase;color:var(--steel-dk)}
-.st-meta b{display:block;margin-top:6px;font-size:.95rem;font-variant-numeric:tabular-nums}
+.st-card h1{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.035em;line-height:1.1;
+  font-size:clamp(1.6rem,5.2vw,2.05rem);margin:16px 0 12px;
+}
+.st-sub{
+  font-size:clamp(.92rem,2vw,.98rem);color:var(--steel);line-height:1.7;
+  letter-spacing:.005em;margin-bottom:28px;max-width:46ch;
+}
 
-.st-steps{list-style:none;margin-bottom:26px;padding:0}
-.st-steps li{display:flex;gap:14px;padding-bottom:20px;position:relative}
-.st-steps li:not(:last-child)::before{content:"";position:absolute;left:8px;top:20px;bottom:0;
-  width:1px;background:rgba(255,255,255,.12)}
-.st-steps i{width:17px;height:17px;flex:0 0 17px;margin-top:2px;border-radius:50%;
-  border:2px solid rgba(255,255,255,.16);background:#070E22;z-index:1}
-.st-steps b{display:block;font-size:.94rem;margin-bottom:3px}
-.st-steps span{display:block;font-size:.82rem;color:var(--steel-dk);line-height:1.5}
+/* ---------- reference / fee / qualification grid ---------- */
+.st-meta{
+  display:grid;grid-template-columns:1fr 1fr;gap:1px;margin-bottom:28px;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);
+}
+.st-meta div{padding:15px 16px;background:#070E22}
+.st-meta span{
+  display:block;font-family:var(--f-mono);font-size:.55rem;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--steel-dk);
+}
+.st-meta b{
+  display:block;margin-top:7px;font-size:1rem;font-weight:700;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---------- progress steps ---------- */
+.st-steps{list-style:none;margin-bottom:28px;padding:0}
+.st-steps li{display:flex;gap:15px;padding-bottom:22px;position:relative}
+.st-steps li:not(:last-child)::before{
+  content:"";position:absolute;left:8px;top:20px;bottom:0;width:1px;
+  background:rgba(255,255,255,.12);
+}
+.st-steps i{
+  width:17px;height:17px;flex:0 0 17px;margin-top:2px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.16);background:#070E22;z-index:1;
+}
+.st-steps b{
+  display:block;font-family:var(--f-body);font-weight:700;font-size:.96rem;
+  letter-spacing:-.01em;line-height:1.35;margin-bottom:4px;
+}
+.st-steps span{display:block;font-size:.84rem;color:var(--steel-dk);line-height:1.6;max-width:40ch}
 .st-done i{background:var(--mint);border-color:var(--mint);box-shadow:0 0 12px rgba(46,211,198,.5)}
 .st-done::before{background:rgba(46,211,198,.4)!important}
 .st-next i{border-color:var(--cyan);animation:stPulse 2.2s ease-in-out infinite}
 .st-next b{color:var(--cyan)}
-.st-todo b,.st-todo span{color:var(--steel-dk)}
-@keyframes stPulse{0%,100%{box-shadow:0 0 0 0 rgba(99,226,255,.5)}
-  70%{box-shadow:0 0 0 9px rgba(99,226,255,0)}}
-
-.st-closed{padding:16px;margin-bottom:24px;
-  border:1px solid rgba(255,201,138,.3);background:rgba(255,201,138,.08)}
-.st-closed b{display:block;color:#FFD9A8;margin-bottom:5px}
-.st-closed span{font-size:.86rem;color:var(--steel);line-height:1.55}
-
-.st-btn{
-  display:block;width:100%;padding:16px;text-align:center;text-decoration:none;color:#fff;
-  font-weight:700;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;
-  border:1px solid rgba(255,255,255,.18);
-  background:linear-gradient(135deg,#3C8BFF,var(--signal) 60%,#0F3FCC);
-  box-shadow:0 14px 34px -14px rgba(27,92,255,.9),inset 0 1px 0 rgba(255,255,255,.3);
-  transition:transform .3s cubic-bezier(.16,1,.3,1);
+.st-todo b{color:var(--steel)}
+.st-todo span{color:var(--steel-dk)}
+@keyframes stPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(99,226,255,.5)}
+  70%{box-shadow:0 0 0 9px rgba(99,226,255,0)}
 }
-.st-btn:hover{transform:translateY(-2px)}
-.st-note{margin-top:16px;text-align:center;font-family:var(--f-mono);
-  font-size:.58rem;letter-spacing:.12em;color:var(--steel-dk)}
+
+.st-closed{padding:17px;margin-bottom:26px;border:1px solid rgba(255,201,138,.3);background:rgba(255,201,138,.08)}
+.st-closed b{display:block;font-size:.95rem;color:#FFD9A8;margin-bottom:6px;letter-spacing:-.01em}
+.st-closed span{font-size:.87rem;color:var(--steel);line-height:1.6}
+
+/* ---------- primary action ---------- */
+.st-btn{
+  display:block;width:100%;padding:17px;text-align:center;text-decoration:none;color:#fff;
+  font-family:var(--f-body);font-weight:700;font-size:.79rem;letter-spacing:.12em;text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(135deg,var(--signal-2),var(--signal) 60%,#0F3FCC);
+  box-shadow:0 14px 34px -14px rgba(27,92,255,.9),inset 0 1px 0 rgba(255,255,255,.3);
+  transition:transform .3s var(--ease-out),box-shadow .3s var(--ease-out);
+}
+.st-btn:hover{transform:translateY(-2px);box-shadow:0 20px 42px -16px rgba(27,92,255,1)}
+.st-note{
+  margin-top:18px;text-align:center;font-family:var(--f-mono);
+  font-size:.6rem;font-weight:500;letter-spacing:.12em;color:var(--steel-dk);line-height:1.6;
+}
+
 /* ---------- the fresh-payment auto-return timer ---------- */
 .st-timer{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;
-  margin-top:18px;padding-top:16px;border-top:1px dashed rgba(255,255,255,.14);
+  margin-top:20px;padding-top:18px;border-top:1px dashed rgba(255,255,255,.14);
 }
 .st-timer-ring{width:22px;height:22px;flex:0 0 22px;transform:rotate(-90deg)}
 .st-timer-track{fill:none;stroke:rgba(255,255,255,.14);stroke-width:3}
-.st-timer-fill{fill:none;stroke:var(--cyan);stroke-width:3;stroke-linecap:round;
-  transition:stroke-dasharray .9s linear}
-.st-timer span{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;
-  color:var(--steel-dk);white-space:nowrap}
+.st-timer-fill{fill:none;stroke:var(--cyan);stroke-width:3;stroke-linecap:round;transition:stroke-dasharray .9s linear}
+.st-timer span{font-family:var(--f-mono);font-size:.63rem;letter-spacing:.08em;color:var(--steel-dk);white-space:nowrap}
 .st-timer button{
   background:none;border:1px solid rgba(255,255,255,.18);color:var(--porcelain);
   font-family:var(--f-mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;
@@ -90,31 +152,34 @@
 }
 .st-timer button:hover{background:rgba(255,255,255,.08)}
 
-/* ---------- responsive: phones ---------- */
-@media(max-width:480px){
-  .st-wrap{padding:16px 14px}
-  .st-card{padding:22px 18px;max-width:100%}
-  .st-btn{padding:15px;font-size:.74rem}
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-width:600px){
+  .st-wrap{padding:64px 16px 20px}         /* room at the top for the back button */
+  .st-back{padding:8px 12px 8px 10px;font-size:.6rem}
+  .st-card{padding:24px 20px}
+  .st-card h1{font-size:clamp(1.4rem,6.5vw,1.7rem)}
+  .st-sub{font-size:.9rem;line-height:1.65}
   .st-meta{grid-template-columns:1fr}
-  .st-meta div{padding:12px 14px}
-  .st-steps li{gap:12px;padding-bottom:18px}
-  .st-timer{flex-direction:column;gap:8px}
+  .st-meta div{padding:13px 15px}
+  .st-steps li{gap:12px;padding-bottom:19px}
+  .st-steps b{font-size:.92rem}
+  .st-steps span{font-size:.82rem}
+  .st-btn{padding:16px;font-size:.75rem}
+  .st-timer{flex-direction:column;gap:9px}
 }
-
-/* ---------- responsive: very small phones ---------- */
-@media(max-width:340px){
-  .st-card{padding:18px 14px}
-  .st-card h1{font-size:1.35rem}
+@media(max-width:360px){
+  .st-wrap{padding-top:58px}
+  .st-card{padding:20px 16px}
+  .st-back span{display:none}              /* icon alone is enough at this width */
+  .st-back{padding:9px;gap:0}
 }
-
-/* ---------- landscape phones: the card can be taller than the screen ---------- */
 @media(max-height:480px) and (orientation:landscape){
-  .st-wrap{align-items:flex-start;padding-top:20px;padding-bottom:20px}
+  .st-wrap{align-items:flex-start;padding-top:56px;padding-bottom:20px}
 }
-
-/* ---------- respects the OS setting; the ring stops animating, the
-   countdown text still updates and the redirect still happens ---------- */
 @media(prefers-reduced-motion:reduce){
+  .st-card{animation:none}
   .st-timer-fill{transition:none}
-  .st-btn{transition:none}
+  .st-btn,.st-back{transition:none}
 }

@@ -6,11 +6,23 @@ export const runtime = 'nodejs';
 /**
  * The public job board.
  *
- * Cached for 60 seconds. A hundred thousand visitors browsing jobs would
- * otherwise be a hundred thousand database queries; this way almost all of
- * them are served from cache and Atlas sees a handful.
+ * `dynamic = 'force-dynamic'` turns off Next's own server-side Route Handler
+ * cache. That cache (driven by `revalidate`) was the reason a newly
+ * published job could take up to 60 seconds to appear even on a normal
+ * reload — and combined with the Cache-Control below having no `max-age`,
+ * some browsers held onto it for longer still, which is why nothing short
+ * of a hard refresh (Ctrl+Shift+R) showed the change.
+ *
+ * `max-age=0` on the response now tells every browser to always revalidate
+ * with the server rather than trust a local copy, so a publish shows up on
+ * the very next normal page load. `s-maxage` stays in place for the day a
+ * CDN (e.g. Cloudflare) sits in front of this — a shared cache is still
+ * allowed to hold a copy for visitors it serves directly, which is what
+ * actually matters once traffic is large enough for that to help. The
+ * Job.find() below is small and indexed, so running it on every request is
+ * fine at the traffic this site sees today.
  */
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -46,7 +58,7 @@ export async function GET() {
         postedAt: j.createdAt
       }))
     }, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
+      headers: { 'Cache-Control': 'public, max-age=0, s-maxage=30, stale-while-revalidate=120' }
     });
   } catch (err) {
     console.error('[public-jobs] ', err);

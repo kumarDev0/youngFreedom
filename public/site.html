@@ -3924,7 +3924,15 @@ var FAQS = [
   }
 
   /* ---- step navigation ---- */
-  function go(n){
+  /**
+   * scroll defaults to true because Next/Back should carry the eye to the
+   * new step. The one call that must NOT scroll is the very first one —
+   * go(1) on page load, just to put the wizard into its initial state —
+   * which was unconditionally jumping every fresh visit straight down to
+   * the apply form instead of leaving them on the homepage.
+   */
+  function go(n, scroll){
+    if(scroll === undefined) scroll = true;
     step = n;
     panes.forEach(function(p){ p.classList.toggle("on", +p.dataset.step === n); });
     dots.forEach(function(d,i){
@@ -3939,7 +3947,7 @@ var FAQS = [
     if(n===TOTAL) buildReview();
     if(window.YFmeasure) window.YFmeasure();
     showNote("");
-    form.closest(".form-card").scrollIntoView({block:"nearest", behavior: RM ? "auto" : "smooth"});
+    if(scroll) form.closest(".form-card").scrollIntoView({block:"nearest", behavior: RM ? "auto" : "smooth"});
   }
   next.addEventListener("click", function(){ if(validate(step)) go(Math.min(TOTAL, step+1)); });
   back.addEventListener("click", function(){ go(Math.max(1, step-1)); });
@@ -4093,7 +4101,7 @@ var FAQS = [
     btn.textContent = "Pay \u20B9" + amount + " & submit \u2192";
   }
 
-  go(1); updatePass(); updateFee();
+  go(1, false); updatePass(); updateFee();   /* false = do not scroll on initial load */
 })();
 
 

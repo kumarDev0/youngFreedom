@@ -41,6 +41,10 @@ export default async function StatusPage({ params }) {
   if (!app && !pending) {
     return (
       <main className="st-wrap">
+      <a className="st-back" href="/" aria-label="Back to YoungFreedom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+        <span>Back</span>
+      </a>
         <div className="st-card">
           <span className="st-eyebrow">Not found</span>
           <h1>We could not find that application</h1>
@@ -57,6 +61,10 @@ export default async function StatusPage({ params }) {
   if (pending) {
     return (
       <main className="st-wrap">
+      <a className="st-back" href="/" aria-label="Back to YoungFreedom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+        <span>Back</span>
+      </a>
         <div className="st-card">
           <span className="st-eyebrow">Not submitted yet</span>
           <h1>Your fee is still pending</h1>
@@ -84,6 +92,10 @@ export default async function StatusPage({ params }) {
 
   return (
     <main className="st-wrap">
+      <a className="st-back" href="/" aria-label="Back to YoungFreedom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+        <span>Back</span>
+      </a>
       <div className="st-card">
         <span className="st-eyebrow"><i className="st-dot" />Application confirmed</span>
         <h1>{app.name}</h1>
