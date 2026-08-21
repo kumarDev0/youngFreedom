@@ -1,0 +1,144 @@
+/* Legal document pages — Terms, Privacy, Refund. Same dark, glass-panel
+   language as the rest of the site, tuned for long-form reading: a
+   controlled line length, a real heading hierarchy, and a table of
+   contents, since these are read carefully by candidates and by payment
+   gateway reviewers, not skimmed like a landing page. */
+:root{
+  --ink:#04091A; --ink-2:#070E22; --signal:#1B5CFF; --signal-2:#3C8BFF; --cyan:#63E2FF;
+  --porcelain:#F2F6FD; --steel:#96A8C7; --steel-dk:#5A6E90;
+  --line:rgba(255,255,255,.09); --line-2:rgba(255,255,255,.14);
+  --f-display:"Clash Display","Satoshi",system-ui,sans-serif;
+  --f-body:"Satoshi",system-ui,-apple-system,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,monospace;
+  --ease-out:cubic-bezier(.16,1,.3,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+.lg-body{
+  margin:0;min-height:100vh;font-family:var(--f-body);color:var(--porcelain);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background:
+    radial-gradient(50% 38% at 15% 0%,rgba(27,92,255,.16),transparent 70%),
+    radial-gradient(40% 34% at 100% 30%,rgba(99,226,255,.08),transparent 72%),
+    linear-gradient(180deg,#050B1E 0%,#04091A 50%,#02050D 100%);
+}
+
+/* ---------- top bar ---------- */
+.lg-top{
+  position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  gap:14px;padding:16px clamp(18px,4vw,40px);
+  border-bottom:1px solid var(--line);
+  background:rgba(6,12,28,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+}
+.lg-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit}
+.lg-mark{
+  width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;
+  font-family:var(--f-display);font-weight:700;font-size:.72rem;color:#fff;
+  background:linear-gradient(150deg,#4C97FF,#0C2E8A);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+}
+.lg-brand b{font-family:var(--f-display);font-size:.94rem;letter-spacing:-.02em}
+.lg-back{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 14px;text-decoration:none;
+  color:var(--steel);border:1px solid var(--line-2);background:rgba(255,255,255,.03);
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  transition:color .25s var(--ease-out),border-color .25s var(--ease-out);
+}
+.lg-back svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lg-back:hover{color:#fff;border-color:rgba(99,226,255,.32)}
+
+/* ---------- shell: nav rail + document ---------- */
+.lg-shell{
+  max-width:1180px;margin:0 auto;padding:clamp(28px,5vw,56px) clamp(18px,4vw,40px) 100px;
+  display:grid;grid-template-columns:230px 1fr;gap:clamp(28px,4vw,56px);align-items:start;
+}
+.lg-toc{position:sticky;top:88px;border:1px solid var(--line);background:rgba(255,255,255,.025);padding:18px}
+.lg-toc-label{
+  display:block;font-family:var(--f-mono);font-size:.56rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--steel-dk);margin-bottom:14px;
+}
+.lg-toc a{
+  display:block;padding:7px 0;font-size:.82rem;color:var(--steel);text-decoration:none;
+  border-left:2px solid transparent;padding-left:11px;margin-left:-1px;
+  transition:color .2s var(--ease-out),border-color .2s var(--ease-out);
+}
+.lg-toc a:hover{color:#fff;border-color:rgba(99,226,255,.4)}
+
+/* ---------- the document itself ---------- */
+.lg-doc{min-width:0}
+.lg-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);
+  font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);
+}
+.lg-doc h1{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.035em;line-height:1.1;
+  font-size:clamp(1.9rem,4.4vw,2.6rem);margin:16px 0 10px;
+}
+.lg-updated{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.05em;color:var(--steel-dk);margin-bottom:34px}
+
+.lg-doc section{margin-bottom:38px;scroll-margin-top:90px}
+.lg-doc h2{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.02em;font-size:1.26rem;
+  margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--line);
+}
+.lg-doc h3{font-family:var(--f-body);font-weight:700;font-size:1rem;letter-spacing:-.01em;margin:20px 0 8px}
+.lg-doc p{font-size:.94rem;line-height:1.75;color:var(--steel);max-width:70ch;margin-bottom:14px}
+.lg-doc p b, .lg-doc li b{color:var(--porcelain);font-weight:700}
+.lg-doc ul, .lg-doc ol{margin:0 0 16px;padding-left:22px;max-width:70ch}
+.lg-doc li{font-size:.94rem;line-height:1.75;color:var(--steel);margin-bottom:8px}
+.lg-doc a.inline{color:var(--cyan);text-decoration:underline;text-underline-offset:3px}
+
+.lg-callout{
+  padding:16px 18px;margin:18px 0;border:1px solid rgba(99,226,255,.24);background:rgba(99,226,255,.05);
+  max-width:70ch;
+}
+.lg-callout p{color:var(--porcelain);margin:0;font-size:.9rem;line-height:1.65}
+.lg-callout.warn{border-color:rgba(255,201,138,.32);background:rgba(255,201,138,.06)}
+.lg-callout.warn p{color:#FFDCB0}
+
+.lg-table{width:100%;max-width:70ch;border-collapse:collapse;margin:16px 0 22px;font-size:.88rem}
+.lg-table th{
+  text-align:left;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--steel-dk);font-weight:400;padding:0 14px 10px 0;border-bottom:1px solid var(--line);
+}
+.lg-table td{padding:11px 14px 11px 0;border-bottom:1px solid rgba(255,255,255,.05);color:var(--steel)}
+.lg-table td:first-child, .lg-table th:first-child{color:var(--porcelain)}
+
+.lg-contact{
+  margin-top:44px;padding:22px;border:1px solid var(--line);background:rgba(255,255,255,.025);max-width:70ch;
+}
+.lg-contact h2{margin-bottom:12px;padding-bottom:0;border:0}
+.lg-contact a{display:block;color:var(--cyan);text-decoration:none;font-size:.9rem;margin-bottom:6px}
+.lg-contact a:hover{text-decoration:underline}
+
+.lg-crosslinks{display:flex;gap:10px;flex-wrap:wrap;margin-top:40px;padding-top:24px;border-top:1px solid var(--line)}
+.lg-crosslinks a{
+  padding:9px 15px;border:1px solid var(--line-2);color:var(--steel);text-decoration:none;
+  font-size:.8rem;transition:color .2s,border-color .2s;
+}
+.lg-crosslinks a:hover{color:#fff;border-color:rgba(99,226,255,.32)}
+.lg-crosslinks a.on{color:var(--cyan);border-color:rgba(99,226,255,.32);background:rgba(99,226,255,.06)}
+
+/* ---------- responsive ---------- */
+@media(max-width:860px){
+  .lg-shell{grid-template-columns:1fr}
+  .lg-toc{position:static;order:2;margin-top:8px}
+}
+@media(max-width:520px){
+  .lg-top{padding:14px 16px}
+  .lg-brand b{display:none}
+  .lg-back span{display:none}
+  .lg-back{padding:9px;gap:0}
+  .lg-shell{padding:22px 16px 80px}
+  .lg-doc h1{font-size:1.55rem}
+  .lg-doc h2{font-size:1.1rem}
+}
+
+/* legal documents are meant to be printable/saveable — a real gateway
+   reviewer or a candidate may well hit Ctrl+P */
+@media print{
+  .lg-top,.lg-toc,.lg-crosslinks{display:none}
+  .lg-body{background:#fff;color:#000}
+  .lg-doc h1,.lg-doc h2,.lg-doc h3{color:#000}
+  .lg-doc p,.lg-doc li{color:#111}
+  .lg-shell{grid-template-columns:1fr;padding:0}
+}
