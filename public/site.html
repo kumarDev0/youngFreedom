@@ -1137,6 +1137,104 @@ select option{background:#0A1226;color:#EAF3FF}
 .acc .ans{overflow:hidden;height:0;transition:height .45s var(--ease-out)}
 .acc .ans p{padding-bottom:24px;color:#4A5C7C;font-size:.97rem;max-width:70ch}
 
+/* ---------- manual UPI payment (temporary stopgap) ---------- */
+/* The browser's own [hidden]{display:none} rule loses to ANY author rule
+   that sets display on the same element, regardless of specificity or
+   source order — so setting display:flex below made the modal ignore the
+   hidden attribute entirely and stay visible from page load. This rule
+   restores it: while hidden is present, display:none wins (an attribute
+   selector is more specific than a bare class), and the moment JS clears
+   the attribute, the plain .mu-overlay rule beneath takes back over. */
+.mu-overlay[hidden]{display:none}
+.mu-overlay{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(2,5,13,.78);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  animation:muFade .25s var(--ease-out) both;
+}
+@keyframes muFade{from{opacity:0}to{opacity:1}}
+.mu-panel{
+  position:relative;width:100%;max-width:400px;max-height:92vh;overflow-y:auto;
+  padding:clamp(26px,4vw,34px);text-align:center;
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(158deg,rgba(10,20,44,.98),rgba(4,9,26,.99));
+  box-shadow:0 40px 90px -30px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.08);
+  animation:muPanelIn .35s var(--ease-out) both;
+}
+@keyframes muPanelIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.mu-close{
+  position:absolute;top:14px;right:14px;width:32px;height:32px;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:var(--steel);
+  font-size:1.1rem;line-height:1;cursor:pointer;transition:color .2s,border-color .2s;
+}
+.mu-close:hover{color:#fff;border-color:rgba(99,226,255,.32)}
+.mu-eyebrow{
+  display:inline-flex;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--cyan);margin-bottom:14px;
+}
+.mu-panel h3{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.025em;line-height:1.25;
+  font-size:1.15rem;margin-bottom:10px;
+}
+.mu-amount{font-size:.9rem;color:var(--steel);margin-bottom:20px}
+.mu-amount b{font-family:var(--f-display);font-size:1.3rem;color:var(--cyan);font-weight:700}
+
+.mu-qr{
+  display:inline-grid;place-items:center;padding:14px;margin-bottom:16px;
+  background:#fff;box-shadow:0 20px 44px -22px rgba(0,0,0,.8);
+}
+.mu-qr img{display:block;width:180px;height:180px}
+
+.mu-upi-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:12px 14px;margin-bottom:14px;border:1px dashed rgba(99,226,255,.3);background:rgba(99,226,255,.06);
+}
+.mu-upi-row span{font-family:var(--f-mono);font-size:.86rem;color:var(--porcelain);letter-spacing:.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mu-upi-row button{
+  flex:0 0 auto;padding:7px 14px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);
+  color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;
+  transition:background .2s;
+}
+.mu-upi-row button:hover{background:rgba(255,255,255,.14)}
+
+.mu-app-link{
+  display:block;padding:13px;margin-bottom:22px;text-align:center;text-decoration:none;
+  border:1px solid var(--line-2,rgba(255,255,255,.16));color:var(--porcelain);font-size:.84rem;font-weight:700;
+  transition:border-color .2s,color .2s;
+}
+.mu-app-link:hover{border-color:rgba(99,226,255,.35);color:var(--cyan)}
+
+.mu-divider{
+  position:relative;text-align:center;margin:6px 0 18px;font-family:var(--f-mono);
+  font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--steel-dk);
+}
+.mu-divider::before,.mu-divider::after{content:"";position:absolute;top:50%;width:28%;height:1px;background:rgba(255,255,255,.12)}
+.mu-divider::before{left:0}.mu-divider::after{right:0}
+
+.mu-utr-label{
+  display:block;text-align:left;font-family:var(--f-mono);font-size:.56rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--steel-dk);margin-bottom:8px;
+}
+.mu-panel input{
+  width:100%;height:50px;padding:0 14px;margin-bottom:8px;font-size:16px;text-align:center;
+  letter-spacing:.06em;color:var(--porcelain);border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.04);font-family:var(--f-mono);
+}
+.mu-panel input:focus{outline:none;border-color:var(--signal);box-shadow:0 0 0 4px rgba(27,92,255,.14)}
+.mu-hint{font-size:.72rem;color:var(--steel-dk);margin-bottom:18px;line-height:1.5}
+
+.mu-submit{width:100%;justify-content:center}
+.mu-msg{
+  margin-top:14px;padding:11px 13px;font-size:.82rem;line-height:1.5;border:1px solid var(--line);
+}
+.mu-msg.ok{color:var(--cyan);border-color:rgba(99,226,255,.3);background:rgba(99,226,255,.06)}
+.mu-msg.err{color:#FF9A9A;border-color:rgba(255,138,155,.3);background:rgba(255,138,155,.07)}
+
+@media(max-width:420px){
+  .mu-panel{padding:24px 18px;max-height:94vh}
+  .mu-qr img{width:150px;height:150px}
+}
+
 /* ---------- track my application ---------- */
 .track-sect{position:relative;padding-block:clamp(64px,9vw,110px);overflow:hidden}
 .track-glow{
@@ -2368,6 +2466,38 @@ footer{content-visibility:auto;contain-intrinsic-size:auto 500px}
           <button type="button" class="btn" id="wizNext" data-hi="आगे बढ़ें">Continue →</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ============ MANUAL UPI PAYMENT (temporary, while a gateway's KYC
+       is pending — see PAYMENT_MODE in the backend) ============ -->
+  <div class="mu-overlay" id="muOverlay" hidden>
+    <div class="mu-panel">
+      <button type="button" class="mu-close" id="muClose" aria-label="Close">&times;</button>
+
+      <span class="mu-eyebrow" data-hi="यूपीआई से भुगतान करें">Pay via UPI</span>
+      <h3 data-hi="अपना आवेदन पूरा करने के लिए भुगतान करें">Scan, pay, and tell us the reference number</h3>
+      <p class="mu-amount">Amount due: <b id="muAmount">&#8377;0</b></p>
+
+      <div class="mu-qr"><img id="muQrImg" alt="UPI QR code" width="200" height="200" loading="lazy"></div>
+
+      <div class="mu-upi-row">
+        <span id="muUpiId">&mdash;</span>
+        <button type="button" id="muCopyBtn" data-hi="कॉपी करें">Copy</button>
+      </div>
+
+      <a class="mu-app-link" id="muPayAppLink" href="#" data-hi="यूपीआई ऐप में खोलें">Open in your UPI app &rarr;</a>
+
+      <div class="mu-divider"><span data-hi="भुगतान कर दिया है?">Already paid?</span></div>
+
+      <label class="mu-utr-label" for="muUtr" data-hi="ट्रांज़ैक्शन आईडी / यूटीआर नंबर">Transaction ID / UTR number</label>
+      <input id="muUtr" type="text" inputmode="text" maxlength="30" placeholder="e.g. 123456789012" autocomplete="off">
+      <p class="mu-hint" data-hi="भुगतान ऐप की हिस्ट्री में यह नंबर मिलेगा।">Find this in your payment app's transaction history.</p>
+
+      <button type="button" class="btn btn-lg mu-submit" id="muSubmitUtr" data-hi="भुगतान भेजें और सबमिट करें">
+        Submit payment reference &rarr;
+      </button>
+      <p class="mu-msg" id="muMsg" hidden></p>
     </div>
   </div>
 </section>
@@ -4130,8 +4260,13 @@ var FAQS = [
       }
 
       /* the server confirms what is actually owed */
-      btn.textContent = "Opening secure payment\u2026";
-      openCheckout(data, payload);
+      if(data.paymentMode === "MANUAL_UPI"){
+        btn.textContent = original; btn.disabled = false;
+        openManualUpi(data);
+      } else {
+        btn.textContent = "Opening secure payment\u2026";
+        openCheckout(data, payload);
+      }
 
     } catch(err){
       showNote(err.message || "Something went wrong. Please try again.");
@@ -4192,6 +4327,79 @@ var FAQS = [
     btn.disabled = false;
     btn.textContent = "Pay \u20B9" + amount + " & submit \u2192";
   }
+
+  /**
+   * Manual UPI panel — shown only while PAYMENT_MODE=MANUAL_UPI on the
+   * server. The candidate pays a fixed UPI ID directly in their own app and
+   * self-reports the transaction reference; nothing here confirms the
+   * payment by itself — a staff member checks it against their own bank
+   * app before the application becomes real. The QR encodes only a public
+   * UPI-pay link (our UPI ID and the amount), which is not sensitive data —
+   * unlike a 2FA secret, this is exactly what you would read out to
+   * someone paying you by hand.
+   */
+  function openManualUpi(data){
+    var overlay = el("muOverlay");
+    el("muAmount").textContent = "\u20B9" + data.amount;
+    el("muUpiId").textContent = data.manualUpi.id;
+    el("muQrImg").src = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="
+      + encodeURIComponent(data.manualUpi.upiUri);
+    el("muPayAppLink").href = data.manualUpi.upiUri;
+    el("muUtr").value = "";
+    el("muMsg").hidden = true;
+    overlay.dataset.appId = data.appId;
+    overlay.dataset.token = data.token;
+    overlay.dataset.statusUrl = data.statusUrl;
+    overlay.hidden = false;
+  }
+
+  function muShowMsg(text, ok){
+    var m = el("muMsg");
+    m.textContent = text; m.className = "mu-msg " + (ok ? "ok" : "err"); m.hidden = false;
+  }
+
+  el("muClose").addEventListener("click", function(){ el("muOverlay").hidden = true; });
+  /* clicking the dark backdrop (not the panel itself) also dismisses it —
+     standard modal behaviour, and a second way out besides the × button */
+  el("muOverlay").addEventListener("click", function(e){
+    if(e.target === this) this.hidden = true;
+  });
+
+  el("muCopyBtn").addEventListener("click", function(){
+    var id = el("muUpiId").textContent;
+    navigator.clipboard.writeText(id).then(function(){
+      var b = el("muCopyBtn"); var orig = b.textContent;
+      b.textContent = "Copied"; setTimeout(function(){ b.textContent = orig; }, 1500);
+    }).catch(function(){ muShowMsg("Could not copy \u2014 select and copy the UPI ID manually.", false); });
+  });
+
+  el("muSubmitUtr").addEventListener("click", function(){
+    var overlay = el("muOverlay");
+    var utr = el("muUtr").value.trim();
+    if(!utr){ muShowMsg("Enter the transaction ID from your payment app.", false); return; }
+
+    var btn = this; var original = btn.textContent;
+    btn.disabled = true; btn.textContent = "Submitting\u2026";
+    el("muMsg").hidden = true;
+
+    fetch("/api/applications/submit-utr", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appId: overlay.dataset.appId, token: overlay.dataset.token, utr: utr })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+      .then(function(res){
+        if(res.ok){
+          window.location.href = overlay.dataset.statusUrl;
+        } else {
+          muShowMsg(res.data.error || "Could not submit. Please try again.", false);
+          btn.disabled = false; btn.textContent = original;
+        }
+      })
+      .catch(function(){
+        muShowMsg("Something went wrong. Please try again.", false);
+        btn.disabled = false; btn.textContent = original;
+      });
+  });
 
   go(1, false); updatePass(); updateFee();   /* false = do not scroll on initial load */
 })();
