@@ -65,6 +65,11 @@
 .st-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex:0 0 7px;
   box-shadow:0 0 10px var(--mint)}
 
+/* rejected-payment state: same eyebrow rhythm, warm rather than cool, so
+   it reads as "needs your attention" without looking alarming or broken */
+.st-eyebrow-warn{color:#FFC98A}
+.st-dot-warn{background:#FFC98A;box-shadow:0 0 10px rgba(255,201,138,.6)}
+
 .st-card h1{
   font-family:var(--f-display);font-weight:600;letter-spacing:-.035em;line-height:1.1;
   font-size:clamp(1.6rem,5.2vw,2.05rem);margin:16px 0 12px;

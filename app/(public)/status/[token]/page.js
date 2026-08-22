@@ -35,7 +35,7 @@ export default async function StatusPage({ params }) {
 
   const pending = !app && appId && token
     ? await PendingApplication.findOne({ appId, token })
-        .select('appId name district qualification fee.amount createdAt manualPayment').lean()
+        .select('appId name district qualification fee.amount createdAt manualPayment expiresAt').lean()
     : null;
 
   if (!app && !pending) {
@@ -80,8 +80,57 @@ export default async function StatusPage({ params }) {
             <div><span>Transaction ID</span><b>{pending.manualPayment.utr}</b></div>
           </div>
           <p className="st-note">
-            If this takes more than a day, message us on WhatsApp with your
-            reference number above.
+            We do not send a message when this is done — reopen this same
+            link in a few hours to see the result. If it takes more than a
+            day, message us on WhatsApp with your reference number above.
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  /* Staff checked their bank/UPI app and the submitted reference did not
+     match — wrong amount, wrong number, or nothing found at all. Showing
+     the generic "not submitted yet" message here would be actively
+     misleading: the candidate DID submit something, and needs to know
+     specifically that it was rejected and why, not that they still owe
+     the original step. */
+  if (pending?.manualPayment?.status === 'rejected') {
+    return (
+      <main className="st-wrap">
+      <a className="st-back" href="/" aria-label="Back to YoungFreedom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+        <span>Back</span>
+      </a>
+        <div className="st-card">
+          <span className="st-eyebrow st-eyebrow-warn"><i className="st-dot st-dot-warn" />Payment not verified</span>
+          <h1>{pending.name}, we could not verify that payment</h1>
+          <p className="st-sub">
+            The transaction reference you submitted did not match a payment
+            we could find for ₹{pending.fee?.amount}. This is usually a typo
+            in the reference number, or a payment made for a different
+            amount.
+          </p>
+
+          <div className="st-meta">
+            <div><span>Reference</span><b>{pending.appId}</b></div>
+            <div><span>Amount due</span><b>₹{pending.fee?.amount}</b></div>
+          </div>
+
+          {pending.manualPayment.rejectReason && (
+            <div className="st-closed">
+              <b>Reason given by our team</b>
+              <span>{pending.manualPayment.rejectReason}</span>
+            </div>
+          )}
+
+          <a className="st-btn" href="/#apply">Try the payment step again</a>
+          <p className="st-note">
+            Use the same phone number on the form — we will bring up this
+            same application and open the payment screen again, where you
+            can enter the correct transaction ID. Already sure your reference
+            was right? Message us on WhatsApp with your reference number
+            above instead.
           </p>
         </div>
       </main>
