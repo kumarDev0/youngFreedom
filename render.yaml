@@ -22,6 +22,12 @@ services:
         sync: false
       - key: MONGODB_URI
         sync: false
+      - key: PAYMENT_MODE
+        value: CASHFREE   # switch to MANUAL_UPI if a gateway's KYC is still pending
+      - key: MANUAL_UPI_ID
+        sync: false        # only read when PAYMENT_MODE=MANUAL_UPI
+      - key: MANUAL_UPI_NAME
+        value: YoungFreedom
       - key: CASHFREE_CLIENT_ID
         sync: false
       - key: CASHFREE_CLIENT_SECRET
@@ -74,6 +80,12 @@ services:
     envVars:
       - key: MONGODB_URI
         sync: false
+      - key: PAYMENT_MODE
+        value: CASHFREE   # switch to MANUAL_UPI if a gateway's KYC is still pending
+      - key: MANUAL_UPI_ID
+        sync: false        # only read when PAYMENT_MODE=MANUAL_UPI
+      - key: MANUAL_UPI_NAME
+        value: YoungFreedom
       - key: CASHFREE_CLIENT_ID
         sync: false
       - key: CASHFREE_CLIENT_SECRET

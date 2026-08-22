@@ -35,7 +35,7 @@ export default async function StatusPage({ params }) {
 
   const pending = !app && appId && token
     ? await PendingApplication.findOne({ appId, token })
-        .select('appId name district qualification fee.amount createdAt').lean()
+        .select('appId name district qualification fee.amount createdAt manualPayment').lean()
     : null;
 
   if (!app && !pending) {
@@ -52,6 +52,37 @@ export default async function StatusPage({ params }) {
             Check the link in your message, or apply again from the website.
           </p>
           <a className="st-btn" href="/">Back to YoungFreedom</a>
+        </div>
+      </main>
+    );
+  }
+
+  /* A UTR has been submitted for manual review, and staff have not yet
+     approved or rejected it — distinct from "you haven't paid at all",
+     which would wrongly suggest the candidate still needs to do something. */
+  if (pending?.manualPayment?.status === 'submitted') {
+    return (
+      <main className="st-wrap">
+      <a className="st-back" href="/" aria-label="Back to YoungFreedom">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>
+        <span>Back</span>
+      </a>
+        <div className="st-card">
+          <span className="st-eyebrow"><i className="st-dot" style={{background:'var(--amber, #FFC98A)'}} />Verifying your payment</span>
+          <h1>{pending.name}, we're checking your payment</h1>
+          <p className="st-sub">
+            You submitted a payment reference for ₹{pending.fee?.amount}, and
+            our team is confirming it now. This is usually done within a few
+            hours — check back on this same link, no need to pay again.
+          </p>
+          <div className="st-meta">
+            <div><span>Reference</span><b>{pending.appId}</b></div>
+            <div><span>Transaction ID</span><b>{pending.manualPayment.utr}</b></div>
+          </div>
+          <p className="st-note">
+            If this takes more than a day, message us on WhatsApp with your
+            reference number above.
+          </p>
         </div>
       </main>
     );

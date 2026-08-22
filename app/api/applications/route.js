@@ -80,25 +80,28 @@ export async function POST(req) {
     const appId = previous ? previous.appId : await nextAppId();
     const token = previous ? previous.token : randomToken(18);
 
-    /* 8. Cashfree order. The order_id is our own appId — no separate mapping
-          table is needed to connect a payment back to a candidate. */
-    let order;
-    try {
-      order = await createOrder({
-        orderId: appId,
-        amount,
-        phone: data.phone,
-        name: data.name,
-        email: data.email || undefined,
-        returnUrl: `${env.appUrl}/status/${appId}-${token}`
-      });
-    } catch (e) {
-      if (e.message === 'CASHFREE_NOT_CONFIGURED') {
-        console.error('[applications] Cashfree keys are missing');
-        return NextResponse.json({ error: 'Payments are temporarily unavailable.' }, { status: 503 });
+    /* 8. Cashfree order — skipped entirely in MANUAL_UPI mode. The order_id
+          is our own appId either way, so nothing downstream needs to know
+          which mode created it. */
+    let order = null;
+    if (env.paymentMode !== 'MANUAL_UPI') {
+      try {
+        order = await createOrder({
+          orderId: appId,
+          amount,
+          phone: data.phone,
+          name: data.name,
+          email: data.email || undefined,
+          returnUrl: `${env.appUrl}/status/${appId}-${token}`
+        });
+      } catch (e) {
+        if (e.message === 'CASHFREE_NOT_CONFIGURED') {
+          console.error('[applications] Cashfree keys are missing');
+          return NextResponse.json({ error: 'Payments are temporarily unavailable.' }, { status: 503 });
+        }
+        console.error('[applications] Cashfree order failed:', e.message);
+        return NextResponse.json({ error: 'Could not start the payment. Please try again.' }, { status: 502 });
       }
-      console.error('[applications] Cashfree order failed:', e.message);
-      return NextResponse.json({ error: 'Could not start the payment. Please try again.' }, { status: 502 });
     }
 
     /* 9. hold the details until the payment confirms them */
@@ -115,7 +118,7 @@ export async function POST(req) {
           resumePublicId: data.resumePublicId || undefined,
           jobId: data.jobId || undefined,
           fee: { tier: data.qualification, amount },
-          orderId: order.order_id,
+          orderId: order ? order.order_id : appId,
           ipHash: hashIp(ip),
           userAgent: (req.headers.get('user-agent') || '').slice(0, 300),
           createdAt: new Date()          // restarts the 24h expiry on a retry
@@ -124,11 +127,28 @@ export async function POST(req) {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
+    if (env.paymentMode === 'MANUAL_UPI') {
+      const note = encodeURIComponent(`YoungFreedom ${appId}`);
+      const upiUri = `upi://pay?pa=${encodeURIComponent(env.manualUpi.id)}`
+        + `&pn=${encodeURIComponent(env.manualUpi.name)}&am=${amount}&cu=INR&tn=${note}`;
+
+      return NextResponse.json({
+        ok: true,
+        appId,
+        token,
+        amount,
+        statusUrl: `/status/${appId}-${token}`,
+        paymentMode: 'MANUAL_UPI',
+        manualUpi: { id: env.manualUpi.id, name: env.manualUpi.name, upiUri }
+      });
+    }
+
     return NextResponse.json({
       ok: true,
       appId,
       amount,
       statusUrl: `/status/${appId}-${token}`,
+      paymentMode: 'CASHFREE',
       /* the browser needs only the session id to open Cashfree's checkout */
       order: { id: order.order_id, paymentSessionId: order.payment_session_id },
       cashfreeEnv: env.cashfree.env

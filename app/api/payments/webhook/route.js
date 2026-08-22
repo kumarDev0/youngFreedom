@@ -4,6 +4,7 @@ import PendingApplication from '../../../../models/PendingApplication.js';
 import Application from '../../../../models/Application.js';
 import Payment from '../../../../models/Payment.js';
 import { verifyWebhookSignature } from '../../../../lib/cashfree.js';
+import { promotePendingApplication } from '../../../../lib/promoteApplication.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -48,71 +49,36 @@ export async function POST(req) {
       const p = event.data.payment;
       const orderId = order.order_id;    // this is our own appId
 
-      /* 1. idempotent payment insert — a retry lands here and stops */
-      try {
-        await Payment.create({
-          paymentId: String(p.cf_payment_id),
-          orderId,
-          appId: orderId,
-          amount: p.payment_amount,
-          currency: order.order_currency,
-          status: 'captured',
-          method: p.payment_group,
-          email: event.data.customer_details?.customer_email,
-          contact: event.data.customer_details?.customer_phone,
-          raw: event.data
-        });
-      } catch (e) {
-        if (e.code === 11000) return NextResponse.json({ ok: true, duplicate: true });
-        throw e;
-      }
-
-      /* 2. already promoted? (reconciliation may have got here first) */
-      const already = await Application.findOne({ 'payment.orderId': orderId }).select('_id').lean();
-      if (already) return NextResponse.json({ ok: true, alreadyPromoted: true });
-
-      /* 3. promote the pending row into a real application */
-      const pending = await PendingApplication.findOne({ orderId }).lean();
+      /* The pending row is found first, and the promotion — including the
+         idempotent Payment insert that stops a Cashfree retry from double-
+         recording — all happens inside the one shared helper. */
+      const pending = await PendingApplication.findOne({ orderId }).select('_id').lean();
 
       if (!pending) {
-        /* Money arrived with no pending row — older than 24h, or a payment
-           we never issued. Never drop it silently. */
+        /* Money arrived with no pending row — older than 24h, already
+           promoted (the row was already deleted by that success), or a
+           payment we never issued. Never drop it silently. */
+        const already = await Application.findOne({ 'payment.orderId': orderId }).select('_id').lean();
+        if (already) return NextResponse.json({ ok: true, alreadyPromoted: true });
+
         console.error('[webhook] PAID BUT NO PENDING ROW', p.cf_payment_id, orderId);
         return NextResponse.json({ ok: true, orphan: true });
       }
 
-      const application = await Application.create({
-        appId: pending.appId,
-        token: pending.token,
-        name: pending.name,
-        phone: pending.phone,
-        email: pending.email,
-        district: pending.district,
-        qualification: pending.qualification,
-        trade: pending.trade,
-        experience: pending.experience,
-        message: pending.message,
-        resumeUrl: pending.resumeUrl,
-        resumePublicId: pending.resumePublicId,
-        jobId: pending.jobId,
-        fee: pending.fee,
-        payment: {
-          status: 'paid',
-          orderId,
-          paymentId: String(p.cf_payment_id),
-          method: p.payment_group,
-          amount: p.payment_amount,
-          paidAt: new Date()
-        },
-        ipHash: pending.ipHash,
-        userAgent: pending.userAgent
+      const result = await promotePendingApplication({
+        pendingId: pending._id,
+        paymentId: p.cf_payment_id,
+        amount: p.payment_amount,
+        method: p.payment_group,
+        raw: event.data
       });
 
-      await Payment.updateOne({ paymentId: String(p.cf_payment_id) }, { $set: { applicationId: application._id } });
-      await PendingApplication.deleteOne({ _id: pending._id });
+      if (result.duplicate) return NextResponse.json({ ok: true, duplicate: true });
 
       /* TODO Phase 3: queue the WhatsApp confirmation here, do not send inline */
-      console.log('[webhook] application created:', application.appId);
+      if (result.ok && !result.alreadyPromoted) {
+        console.log('[webhook] application created:', result.appId);
+      }
     }
 
     if (type === 'PAYMENT_FAILED_WEBHOOK' || type === 'PAYMENT_USER_DROPPED_WEBHOOK') {

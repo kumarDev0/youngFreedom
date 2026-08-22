@@ -323,6 +323,9 @@ button{font:inherit;color:inherit}
   letter-spacing:.12em;text-transform:uppercase;border:1px solid var(--line-2);color:var(--steel)}
 .tag-new{color:var(--cyan);border-color:rgba(99,226,255,.3);background:rgba(99,226,255,.08)}
 .tag-called{color:var(--signal-2);border-color:rgba(60,139,255,.3);background:rgba(60,139,255,.08)}
+.tag-captured{color:var(--mint);border-color:rgba(46,211,198,.32);background:rgba(46,211,198,.08)}
+.tag-failed{color:var(--rose);border-color:rgba(255,138,155,.3);background:rgba(255,138,155,.07)}
+.tag-refunded{color:var(--amber);border-color:rgba(255,201,138,.3);background:rgba(255,201,138,.08)}
 .tag-placed{color:var(--mint);border-color:rgba(46,211,198,.32);background:rgba(46,211,198,.08)}
 .tag-shortlisted{color:var(--amber);border-color:rgba(255,201,138,.3);background:rgba(255,201,138,.08)}
 .tag-interviewed{color:#B9A8FF;border-color:rgba(139,123,255,.32);background:rgba(139,123,255,.08)}
