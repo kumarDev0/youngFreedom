@@ -80,7 +80,14 @@ h1,h2,h3,h4{font-family:var(--f-display);font-weight:600;line-height:1.03;letter
   padding-left:max(var(--pad),env(safe-area-inset-left));
   padding-right:max(var(--pad),env(safe-area-inset-right));}
 section{position:relative}
-.sect{padding-block:clamp(72px,10vw,140px)}
+.sect{padding-block:clamp(72px,10vw,140px);
+  /* When a link lands here with the target already in the URL's hash — as
+     opposed to a click handled by the in-page smooth-scroll script below —
+     the browser jumps to it natively, instantly, with no offset for the
+     fixed nav. This is the CSS-only fix: it applies to every kind of
+     arrival at an anchor, matching the 74px the click handler already uses. */
+  scroll-margin-top:74px;
+}
 .sect-head{max-width:64ch;margin-bottom:clamp(38px,5vw,64px)}
 .sect-head .h-lg{margin-block:18px 16px}
 .light{background:var(--porcelain);color:#08122B}

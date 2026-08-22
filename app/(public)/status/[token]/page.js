@@ -124,7 +124,7 @@ export default async function StatusPage({ params }) {
             </div>
           )}
 
-          <a className="st-btn" href="/#apply">Try the payment step again</a>
+          <a className="st-btn" href="/site.html#apply">Try the payment step again</a>
           <p className="st-note">
             Use the same phone number on the form — we will bring up this
             same application and open the payment screen again, where you
@@ -158,7 +158,7 @@ export default async function StatusPage({ params }) {
             <div><span>Qualification</span><b>{pending.qualification}</b></div>
             <div><span>District</span><b>{pending.district}</b></div>
           </div>
-          <a className="st-btn" href="/#apply">Complete the payment</a>
+          <a className="st-btn" href="/site.html#apply">Complete the payment</a>
           <p className="st-note">
             Unpaid details are removed automatically after 24 hours.
           </p>
