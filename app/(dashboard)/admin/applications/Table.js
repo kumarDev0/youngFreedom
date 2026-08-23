@@ -212,14 +212,22 @@ export default function Table({ districts, callers = [], caps }) {
         {caps.export && <button onClick={exportCsv}>Export CSV</button>}
         {caps.assignCalls && callers.length > 0 && (
           <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            {/* A <select>'s own background/color only paints the closed box —
+                the OPEN option list is a separate browser-native surface that
+                does not inherit them, and falls back to a light OS default
+                unless each <option> is given its own colors directly (inline
+                style works here exactly like a CSS rule would). Without this,
+                every option was unreadable, which is also why the Assign
+                button looked "broken": assignTo could never actually get set. */}
             <select value={assignTo} onChange={(e) => setAssignTo(e.target.value)}
                     style={{
                       height: 38, padding: '0 10px', fontSize: '.8rem',
                       border: '1px solid var(--line-2)', background: 'rgba(255,255,255,.05)', color: 'var(--porcelain)'
                     }}>
-              <option value="">Assign to…</option>
+              <option value="" style={{ background: '#0A1327', color: 'var(--porcelain)' }}>Assign to…</option>
               {callers.map((c) => (
-                <option key={c.id} value={c.id} disabled={c.capacity === 0}>
+                <option key={c.id} value={c.id} disabled={c.capacity === 0}
+                        style={{ background: '#0A1327', color: c.capacity === 0 ? 'var(--steel-dk)' : 'var(--porcelain)' }}>
                   {c.name} — {c.capacity > 0 ? `${c.capacity} slots free` : 'batch full'}
                 </option>
               ))}
