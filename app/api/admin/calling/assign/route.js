@@ -31,6 +31,14 @@ export async function POST(req) {
     if (ids.length > BATCH_CAP) {
       return NextResponse.json({ error: `Assign at most ${BATCH_CAP} at a time.` }, { status: 400 });
     }
+    /* A malformed callerId (missing, or literally the text "undefined" if
+       the dropdown ever renders a caller with no real id) must fail here,
+       clearly, rather than reach Mongoose and crash with a raw CastError
+       that this route's catch-all turns into an unhelpful "something went
+       wrong". */
+    if (!callerId || !/^[0-9a-fA-F]{24}$/.test(callerId)) {
+      return NextResponse.json({ error: 'No valid caller was selected. Refresh the page and try again.' }, { status: 400 });
+    }
 
     await connectDB();
 

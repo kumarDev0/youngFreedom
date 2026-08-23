@@ -31,11 +31,17 @@ export default async function ApplicationsPage() {
       { $group: { _id: '$assignedTo', pending: { $sum: 1 } } }
     ]);
     const loadMap = Object.fromEntries(loads.map((l) => [String(l._id), l.pending]));
-    callers = users.map((u) => ({
-      id: String(u._id), name: u.name,
-      pending: loadMap[String(u._id)] || 0,
-      capacity: Math.max(0, 50 - (loadMap[String(u._id)] || 0))
-    }));
+    /* a malformed or partially-created user document (no real _id) must
+       never reach the dropdown as a selectable option — it would send a
+       garbage value to the assign endpoint and fail with a raw database
+       error instead of anything a person could act on */
+    callers = users
+      .filter((u) => u?._id)
+      .map((u) => ({
+        id: String(u._id), name: u.name,
+        pending: loadMap[String(u._id)] || 0,
+        capacity: Math.max(0, 50 - (loadMap[String(u._id)] || 0))
+      }));
   }
 
   return (
