@@ -533,6 +533,13 @@ button{font:inherit;color:inherit}
 .job-form input:focus,.job-form select:focus,.job-form textarea:focus{
   outline:none;border-color:var(--signal);box-shadow:0 0 0 4px rgba(27,92,255,.13)}
 .job-form input[type=date]{color-scheme:dark}
+/* The closed <select> box already gets a dark background + light text from
+   the rule above, but the OPEN dropdown list is a separate, browser-native
+   surface that does not inherit those styles automatically — every browser
+   falls back to its own default (often near-black text on white, or in
+   some cases very low-contrast) unless <option> is styled explicitly. This
+   is what made every choice except the one already selected look blank. */
+.job-form select option{background:#0A1327;color:var(--porcelain)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{padding:10px 15px;cursor:pointer;font-size:.82rem;
   border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--steel);
