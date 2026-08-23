@@ -16,6 +16,8 @@ export const dynamic = 'force-dynamic';
  * worked hard yesterday and little today should not look identical to one
  * who is actively scraping numbers right now.
  */
+const BATCH_CAP = 50;   // matches the cap enforced in /api/admin/calling/assign
+
 export async function GET() {
   try {
     await requireCapability('assignCalls');
@@ -64,11 +66,19 @@ export async function GET() {
        */
       const flagged = revealsToday >= 8 && resolvedToday < revealsToday * 0.3;
 
+      const pending = Math.max(0, t.assigned - t.resolved);
+      const capacity = Math.max(0, BATCH_CAP - pending);   // room left before hitting the 50-cap
+
       return {
         id, name: c.name, email: c.email, status: c.status,
         assigned: t.assigned,
         resolved: t.resolved,
-        pending: Math.max(0, t.assigned - t.resolved),
+        pending,
+        capacity,
+        /* the whole point of this screen: a caller with something assigned
+           and nothing left pending has genuinely cleared their batch, not
+           just "hasn't been given anything yet" (assigned === 0) */
+        readyForMore: t.assigned > 0 && pending === 0,
         interested: t.interested,
         revealsToday, resolvedToday, flagged,
         lastActiveAt: c.callStats?.lastActiveAt || c.lastLoginAt || null

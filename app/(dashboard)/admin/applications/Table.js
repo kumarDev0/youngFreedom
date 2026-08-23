@@ -218,7 +218,11 @@ export default function Table({ districts, callers = [], caps }) {
                       border: '1px solid var(--line-2)', background: 'rgba(255,255,255,.05)', color: 'var(--porcelain)'
                     }}>
               <option value="">Assign to…</option>
-              {callers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {callers.map((c) => (
+                <option key={c.id} value={c.id} disabled={c.capacity === 0}>
+                  {c.name} — {c.capacity > 0 ? `${c.capacity} slots free` : 'batch full'}
+                </option>
+              ))}
             </select>
             <button disabled={assigning || !assignTo} onClick={assignSelected}>
               {assigning ? 'Assigning…' : 'Assign'}

@@ -41,7 +41,7 @@ export default function CallingTeam() {
             <thead>
               <tr>
                 <th>Caller</th><th>Assigned</th><th>Resolved</th><th>Pending</th>
-                <th>Interested</th><th>Reveals today</th><th>Resolved today</th><th>Last active</th>
+                <th>Capacity</th><th>Interested</th><th>Reveals today</th><th>Resolved today</th><th>Last active</th>
               </tr>
             </thead>
             <tbody>
@@ -50,11 +50,13 @@ export default function CallingTeam() {
                   <td>
                     <b>{r.name}</b>
                     {r.flagged && <span className="tag tag-failed" style={{ marginLeft: 8 }}>⚠ check this</span>}
+                    {r.readyForMore && <span className="tag tag-captured" style={{ marginLeft: 8 }}>Ready for more →</span>}
                     {r.status === 'disabled' && <span className="tag" style={{ marginLeft: 8 }}>disabled</span>}
                   </td>
                   <td className="mono">{r.assigned}</td>
                   <td className="mono">{r.resolved}</td>
                   <td className="mono muted">{r.pending}</td>
+                  <td className="mono" style={{ color: r.capacity > 0 ? 'var(--cyan)' : undefined }}>{r.capacity}</td>
                   <td className="mono">{r.interested}</td>
                   <td className="mono">{r.revealsToday}</td>
                   <td className="mono">{r.resolvedToday}</td>

@@ -19,10 +19,24 @@ export default async function ApplicationsPage() {
   const districts = await Application.distinct('district', { deletedAt: null });
 
   /* only active callers are offered as an assignment target — an invited-
-     but-not-yet-set-up or disabled account cannot be handed applications */
-  const callers = caps.assignCalls
-    ? await User.find({ role: 'caller', status: 'active' }).select('name email').lean()
-    : [];
+     but-not-yet-set-up or disabled account cannot be handed applications.
+     Each one's current unresolved load is shown right in the dropdown, so
+     the owner can see at a glance who has room before assigning — the
+     same 50-cap the assign endpoint itself enforces. */
+  let callers = [];
+  if (caps.assignCalls) {
+    const users = await User.find({ role: 'caller', status: 'active' }).select('name').lean();
+    const loads = await Application.aggregate([
+      { $match: { assignedTo: { $ne: null }, deletedAt: null, callOutcome: { $exists: false } } },
+      { $group: { _id: '$assignedTo', pending: { $sum: 1 } } }
+    ]);
+    const loadMap = Object.fromEntries(loads.map((l) => [String(l._id), l.pending]));
+    callers = users.map((u) => ({
+      id: String(u._id), name: u.name,
+      pending: loadMap[String(u._id)] || 0,
+      capacity: Math.max(0, 50 - (loadMap[String(u._id)] || 0))
+    }));
+  }
 
   return (
     <>
