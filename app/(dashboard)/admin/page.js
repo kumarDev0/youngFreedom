@@ -2,6 +2,8 @@ import { getSession } from '../../../lib/auth.js';
 import { getOverview, formatINR, timeAgo } from '../../../lib/stats.js';
 import { CAPS } from '../../../lib/permissions.js';
 import { TrendChart, DonutChart, BarList, Funnel } from './Charts.js';
+import { connectDB } from '../../../lib/db.js';
+import Application from '../../../models/Application.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,10 +15,80 @@ export const dynamic = 'force-dynamic';
 export default async function OverviewPage() {
   const session = await getSession();
   const caps = CAPS[session.role] || {};
-  const s = await getOverview();
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+  /**
+   * A caller never sees company-wide figures — no total revenue, no total
+   * application count across every candidate, no "view all applications"
+   * link into a page whose own access rules would just show them nothing
+   * useful anyway. This branch is a completely separate query and a
+   * completely separate render, not the shared getOverview() trimmed down
+   * — a caller's Overview is about their own assigned candidates only.
+   */
+  if (session.role === 'caller') {
+    await connectDB();
+    const [assigned, resolved, interested, nextUp] = await Promise.all([
+      Application.countDocuments({ assignedTo: session.id, deletedAt: null }),
+      Application.countDocuments({ assignedTo: session.id, deletedAt: null, callOutcome: { $exists: true } }),
+      Application.countDocuments({ assignedTo: session.id, deletedAt: null, callOutcome: 'interested' }),
+      Application.find({ assignedTo: session.id, deletedAt: null, callOutcome: { $exists: false } })
+        .sort({ assignedAt: -1 }).limit(5)
+        .select('appId name district qualification assignedAt').lean()
+    ]);
+    const pending = Math.max(0, assigned - resolved);
+
+    return (
+      <>
+        <header className="page-head">
+          <div>
+            <span className="eyebrow">{greeting}</span>
+            <h1>Overview</h1>
+          </div>
+        </header>
+
+        <section className="kpi-grid">
+          <Kpi label="Assigned to you" value={assigned} sub="candidates on your list" accent="blue" />
+          <Kpi label="Resolved" value={resolved} sub="have a call outcome logged" accent="green" />
+          <Kpi label="Still pending" value={pending} sub="waiting for a call" accent="amber" />
+          <Kpi label="Interested" value={interested} sub="marked interested so far" accent="cyan" />
+        </section>
+
+        <section className="card">
+          <div className="card-head">
+            <h2>Next up</h2>
+            <a className="card-link" href="/admin/calls">Go to my calls →</a>
+          </div>
+
+          {nextUp.length === 0 ? (
+            <div className="empty">
+              <p><b>{assigned === 0 ? 'Nothing assigned yet' : "You're all caught up"}</b></p>
+              <p>{assigned === 0 ? 'Ask your team lead to assign you some candidates.' : 'Every candidate assigned to you has a result logged.'}</p>
+            </div>
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead><tr><th>ID</th><th>Name</th><th>District</th><th>Qualification</th></tr></thead>
+                <tbody>
+                  {nextUp.map((r) => (
+                    <tr key={r.appId}>
+                      <td className="mono">{r.appId}</td>
+                      <td><b>{r.name}</b></td>
+                      <td>{r.district}</td>
+                      <td>{r.qualification}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </>
+    );
+  }
+
+  const s = await getOverview();
 
   return (
     <>
