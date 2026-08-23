@@ -87,6 +87,7 @@ export async function GET(req) {
         trade: r.trade || '',
         experience: r.experience,
         stage: r.stage,
+        callOutcome: r.callOutcome || null,
         createdAt: r.createdAt,
         assignedTo: r.assignedTo ? String(r.assignedTo) : null
       };

@@ -41,7 +41,31 @@ const ApplicationSchema = new mongoose.Schema({
 
   stage:      { type: String, enum: ['new', 'called', 'shortlisted', 'interviewed', 'placed', 'rejected'], default: 'new', index: true },
   assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
+  assignedAt: { type: Date },
   notes:      [NoteSchema],
+
+  /**
+   * The result of the most recent call, separate from `stage` above.
+   * `stage` is the candidate's position in the whole pipeline (new →
+   * called → shortlisted → ... → placed); `callOutcome` is just "what
+   * happened last time someone dialled this number" — a candidate can be
+   * marked not_picked five times in a row before finally becoming
+   * interested, without the pipeline stage changing until a human decides
+   * to move it forward.
+   */
+  callOutcome: {
+    type: String,
+    enum: ['not_picked', 'switched_off', 'interested', 'not_interested', 'call_later', 'ready_for_interview']
+  },
+  /* Every attempt, kept — not just the latest. This is what a fraud review
+     actually reads: many outcomes logged in the same few minutes is a far
+     stronger signal than the outcome value itself. */
+  callHistory: [{
+    by:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    outcome: { type: String, enum: ['not_picked', 'switched_off', 'interested', 'not_interested', 'call_later', 'ready_for_interview'] },
+    note:    { type: String, maxlength: 300 },
+    at:      { type: Date, default: Date.now }
+  }],
 
   source:    { type: String, default: 'website' },
   ipHash:    { type: String },      // hashed, never the raw IP

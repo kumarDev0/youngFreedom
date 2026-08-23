@@ -581,3 +581,50 @@ button{font:inherit;color:inherit}
   .job-card footer{flex-wrap:wrap}
   .job-card footer button{flex:1 1 44%}
 }
+
+/* ============================================================
+   CALLING TEAM — caller's own screen
+   ============================================================ */
+.calls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:14px}
+.call-card{
+  display:flex;flex-direction:column;gap:14px;padding:20px;
+  border:1px solid var(--line);background:var(--glass);
+  transition:border-color .3s var(--ease)}
+.call-card:hover{border-color:var(--line-2)}
+.call-card header{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.call-card header b{display:block;font-family:var(--f-display);font-size:1rem;font-weight:600;letter-spacing:-.01em}
+.call-meta{display:block;margin-top:5px;font-size:.8rem;color:var(--steel)}
+
+.call-phone{display:flex}
+.call-phone .reveal{width:100%;justify-content:center;text-align:center;padding:10px}
+.call-phone .phone{
+  display:block;width:100%;text-align:center;padding:10px;
+  font-family:var(--f-mono);font-size:.92rem;color:var(--cyan);
+  border:1px solid rgba(99,226,255,.32);background:rgba(99,226,255,.08);
+}
+
+.call-outcomes{display:flex;flex-wrap:wrap;gap:7px}
+.call-outcomes button{
+  padding:8px 12px;cursor:pointer;font-size:.76rem;font-weight:600;
+  border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--steel);
+  transition:background .2s var(--ease),color .2s var(--ease),border-color .2s var(--ease);
+}
+.call-outcomes button:hover:not(:disabled){color:#fff;border-color:rgba(99,226,255,.3)}
+.call-outcomes button:disabled{opacity:.5;cursor:not-allowed}
+.call-outcomes button.on{
+  background:linear-gradient(180deg,rgba(60,139,255,.85),var(--signal));
+  color:#fff;border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+}
+
+.call-note{
+  height:42px;padding:0 12px;font-size:.85rem;color:var(--porcelain);
+  border:1px solid var(--line-2);background:rgba(255,255,255,.03);
+}
+.call-note:focus{outline:none;border-color:var(--signal)}
+.call-note::placeholder{color:var(--steel-dk)}
+
+@media(max-width:520px){
+  .calls-grid{grid-template-columns:1fr}
+  .call-card{padding:16px}
+  .call-outcomes button{flex:1 1 auto;font-size:.72rem;padding:9px 8px}
+}

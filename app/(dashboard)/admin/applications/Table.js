@@ -12,7 +12,7 @@ const QUALS = ['10th', '12th', 'ITI', 'Diploma', 'B.Tech', 'Graduation'];
  * not in the browser. That is what keeps this usable at a hundred thousand
  * rows: the phone only ever holds one page.
  */
-export default function Table({ districts, caps }) {
+export default function Table({ districts, callers = [], caps }) {
   const [rows, setRows] = useState([]);
   const [meta, setMeta] = useState({ page: 1, pages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
@@ -24,6 +24,8 @@ export default function Table({ districts, caps }) {
   const [f, setF] = useState({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '' });
   const [page, setPage] = useState(1);
   const debounce = useRef(null);
+  const [assigning, setAssigning] = useState(false);
+  const [assignTo, setAssignTo] = useState('');
 
   const query = useMemo(() => {
     const p = new URLSearchParams();
@@ -148,6 +150,26 @@ export default function Table({ districts, caps }) {
     } catch (e) { flash(e.message); }
   }
 
+  async function assignSelected() {
+    const ids = [...selected];
+    if (!ids.length) return flash('Select some rows first');
+    if (!assignTo) return flash('Choose a caller first');
+
+    setAssigning(true);
+    try {
+      const res = await fetch('/api/admin/calling/assign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, callerId: assignTo })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      flash(`${data.count} assigned`);
+      setAssignTo('');
+      load();
+    } catch (e) { flash(e.message); }
+    setAssigning(false);
+  }
+
   const active = Object.values(f).filter(Boolean).length;
 
   return (
@@ -188,6 +210,21 @@ export default function Table({ districts, caps }) {
         <span className="sel-count"><b>{selected.size}</b> selected</span>
         <button onClick={copyRows}>Copy</button>
         {caps.export && <button onClick={exportCsv}>Export CSV</button>}
+        {caps.assignCalls && callers.length > 0 && (
+          <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <select value={assignTo} onChange={(e) => setAssignTo(e.target.value)}
+                    style={{
+                      height: 38, padding: '0 10px', fontSize: '.8rem',
+                      border: '1px solid var(--line-2)', background: 'rgba(255,255,255,.05)', color: 'var(--porcelain)'
+                    }}>
+              <option value="">Assign to…</option>
+              {callers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <button disabled={assigning || !assignTo} onClick={assignSelected}>
+              {assigning ? 'Assigning…' : 'Assign'}
+            </button>
+          </span>
+        )}
         {caps.delete && !trash && <button className="danger" onClick={() => remove(false)}>Move to Trash</button>}
         {caps.delete && trash && <button onClick={() => remove(true)}>Restore</button>}
         <button className="ghost" onClick={() => setSelected(new Set())}>Clear</button>
