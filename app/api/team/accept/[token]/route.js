@@ -30,6 +30,7 @@ export async function GET(req, { params }) {
       ok: true,
       email: invite.email,
       name: user?.name || '',
+      role: invite.role,
       roleLabel: CAPS[invite.role]?.label || invite.role
     });
   } catch (err) {

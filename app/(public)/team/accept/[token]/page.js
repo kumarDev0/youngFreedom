@@ -6,11 +6,19 @@ import '../../../../admin.css';
 /**
  * Where an invited teammate lands, one time.
  *
- * Deliberately reuses admin.css's existing auth-* classes rather than any
- * new styling — it is the exact same "set a password, scan a QR, save your
- * backup codes" shape the owner already goes through on first login, so it
- * should look identical, not like a second design.
+ * Still reuses admin.css's auth-* classes and the exact same underlying
+ * flow the owner already goes through on first login (password, then QR,
+ * then backup codes) — nothing about the mechanics changes. The extra
+ * "invite-card" class below adds a more editorial, welcoming layer of
+ * typography and spacing on top, scoped so the plain login page this
+ * shares CSS with is never affected by it.
  */
+const ROLE_BLURBS = {
+  admin:     "you'll manage applications, jobs, and reports across the whole platform.",
+  recruiter: "you'll manage your own job postings and the candidates who apply to them.",
+  caller:    "you'll reach out to your assigned candidates by phone and record how each call goes.",
+  viewer:    "you'll be able to see applications and reports without making any changes."
+};
 export default function AcceptInvitePage({ params }) {
   const [stage, setStage] = useState('loading');   // loading | invalid | password | setup | 2fa | backup
   const [invite, setInvite] = useState(null);
@@ -74,7 +82,7 @@ export default function AcceptInvitePage({ params }) {
 
   return (
     <div className="auth-wrap">
-      <div className="auth-card">
+      <div className="auth-card invite-card">
         <div className="auth-brand">
           <span className="mark">YF</span>
           <div><b>YoungFreedom</b><span>TEAM INVITE</span></div>
@@ -98,27 +106,34 @@ export default function AcceptInvitePage({ params }) {
         {stage === 'password' && invite && (
           <form onSubmit={submitPassword}>
             <span className="eyebrow">You're invited</span>
-            <h1>Set your password</h1>
-            <p className="sub">
-              {invite.name ? `${invite.name}, y` : 'Y'}ou're joining as
-              <b style={{ color: 'var(--cyan)' }}> {invite.roleLabel}</b>.
-              Two-factor is required for every account here — you'll set that
-              up right after this.
+            <p className="invite-welcome">Welcome to the YoungFreedom team.</p>
+            <h1 className="invite-gradient-h">Set your password</h1>
+            <p className="sub invite-trust">
+              Your account is protected with two-factor authentication and an
+              encrypted password — no one at YoungFreedom, including the
+              owner, will ever be able to see it.
+            </p>
+            <p className="sub invite-role-line">
+              {invite.name ? `${invite.name}, y` : 'Y'}ou're joining as{' '}
+              <b className="role-pop">{invite.roleLabel}</b>
+              {ROLE_BLURBS[invite.role] ? <> — {ROLE_BLURBS[invite.role]}</> : '.'}
             </p>
 
-            <div className="field">
-              <label>Email</label>
-              <input value={invite.email} disabled />
-            </div>
-            <div className="field">
-              <label htmlFor="pw">New password</label>
-              <input id="pw" type="password" value={password} autoComplete="new-password"
-                     onChange={(e) => setPassword(e.target.value)} placeholder="At least 12 characters" required />
-            </div>
-            <div className="field">
-              <label htmlFor="pw2">Confirm password</label>
-              <input id="pw2" type="password" value={confirm} autoComplete="new-password"
-                     onChange={(e) => setConfirm(e.target.value)} required />
+            <div className="invite-fields">
+              <div className="field">
+                <label>Email</label>
+                <input value={invite.email} disabled />
+              </div>
+              <div className="field">
+                <label htmlFor="pw">New password</label>
+                <input id="pw" type="password" value={password} autoComplete="new-password"
+                       onChange={(e) => setPassword(e.target.value)} placeholder="At least 12 characters" required />
+              </div>
+              <div className="field">
+                <label htmlFor="pw2">Confirm password</label>
+                <input id="pw2" type="password" value={confirm} autoComplete="new-password"
+                       onChange={(e) => setConfirm(e.target.value)} required />
+              </div>
             </div>
             <button className="btn" disabled={busy}>{busy ? 'Setting up…' : 'Continue'}</button>
           </form>
@@ -127,17 +142,19 @@ export default function AcceptInvitePage({ params }) {
         {stage === 'setup' && setupData && (
           <form onSubmit={submitCode}>
             <span className="eyebrow">One-time setup</span>
-            <h1>Secure your account</h1>
-            <p className="sub">Scan this with Google Authenticator or Authy, then enter the 6-digit code.</p>
+            <h1 className="invite-gradient-h">Secure your account</h1>
+            <p className="sub invite-trust">Scan this with Google Authenticator or Authy, then enter the 6-digit code.</p>
 
             {qr && <div className="qr-box"><img src={qr} alt="Two-factor QR code" width="190" height="190" /></div>}
             <div className="secret">{setupData.secret}</div>
 
-            <div className="field">
-              <label htmlFor="code">6-digit code</label>
-              <input id="code" className="code-input" inputMode="numeric" maxLength={6}
-                     value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-                     placeholder="000000" autoFocus required />
+            <div className="invite-fields">
+              <div className="field">
+                <label htmlFor="code">6-digit code</label>
+                <input id="code" className="code-input" inputMode="numeric" maxLength={6}
+                       value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+                       placeholder="000000" autoFocus required />
+              </div>
             </div>
             <button className="btn" disabled={busy || code.length !== 6}>
               {busy ? 'Verifying…' : 'Confirm and finish'}
@@ -148,8 +165,8 @@ export default function AcceptInvitePage({ params }) {
         {stage === 'backup' && backupCodes && (
           <div className="backup">
             <span className="eyebrow">Save these now</span>
-            <h1>Backup codes</h1>
-            <p className="sub">Each works once, if you ever lose your phone. This is the only time they're shown.</p>
+            <h1 className="invite-gradient-h">Backup codes</h1>
+            <p className="sub invite-trust">Each works once, if you ever lose your phone. This is the only time they're shown.</p>
             <div className="backup-grid">
               {backupCodes.map((c) => <code key={c}>{c}</code>)}
             </div>

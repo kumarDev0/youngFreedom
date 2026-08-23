@@ -113,7 +113,8 @@ button{font:inherit;color:inherit}
 }
 .field input:hover{border-color:rgba(255,255,255,.2)}
 .field input:focus{outline:none;border-color:var(--signal);
-  background:rgba(27,92,255,.08);box-shadow:0 0 0 4px rgba(27,92,255,.15)}
+  background:rgba(27,92,255,.08);
+  box-shadow:0 0 0 4px rgba(27,92,255,.16),0 8px 22px -10px rgba(27,92,255,.5)}
 .field input::placeholder{color:#3B4E70}
 .code-input{
   text-align:center;font-family:var(--f-mono);font-size:1.55rem!important;
@@ -634,4 +635,58 @@ button{font:inherit;color:inherit}
   .calls-grid{grid-template-columns:1fr}
   .call-card{padding:16px}
   .call-outcomes button{flex:1 1 auto;font-size:.72rem;padding:9px 8px}
+}
+
+/* ============================================================
+   INVITE ACCEPTANCE PAGE — a more editorial layer on top of the
+   shared auth-card, scoped entirely to .invite-card so the plain
+   login page (same base classes) is never affected by any of this.
+   ============================================================ */
+.invite-card{padding:clamp(30px,4.6vw,44px)}
+
+.invite-card .eyebrow{margin-bottom:10px}
+.invite-welcome{
+  font-size:.94rem;color:var(--porcelain);font-weight:500;
+  margin-bottom:16px;letter-spacing:-.005em;
+}
+
+/* the premium gradient heading — blue through violet, the same accent
+   family as the rest of the dashboard's highlight text */
+.invite-gradient-h{
+  font-family:var(--f-display);font-weight:600;letter-spacing:-.035em;
+  font-size:clamp(1.6rem,4vw,1.85rem);line-height:1.15;
+  margin:0 0 18px;
+  background:linear-gradient(100deg,#8FB7FF 0%,var(--cyan) 45%,#B9A8FF 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.invite-trust{
+  display:flex;align-items:flex-start;gap:9px;
+  font-size:.86rem;line-height:1.65;color:var(--steel);
+  padding:13px 15px;margin-bottom:16px;
+  border:1px solid rgba(99,226,255,.16);background:rgba(99,226,255,.045);
+}
+.invite-trust::before{
+  content:"";flex:0 0 6px;width:6px;height:6px;margin-top:6px;border-radius:50%;
+  background:var(--cyan);box-shadow:0 0 8px var(--cyan);
+}
+
+.invite-role-line{margin-bottom:30px;line-height:1.7}
+.role-pop{
+  font-family:var(--f-display);font-weight:700;letter-spacing:-.01em;
+  background:linear-gradient(100deg,var(--cyan),#8FB7FF);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 22px rgba(99,226,255,.28);
+}
+
+/* consistent, generous rhythm between each label and its input, and
+   noticeably more air between the whole field group and the fields above */
+.invite-fields{display:flex;flex-direction:column;gap:18px;margin-bottom:28px}
+.invite-fields .field{margin-bottom:0}
+.invite-fields .field label{margin-bottom:9px}
+
+@media(max-width:520px){
+  .invite-card{padding:24px 20px}
+  .invite-trust{padding:12px 13px}
+  .invite-role-line{margin-bottom:24px}
 }
