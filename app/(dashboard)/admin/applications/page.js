@@ -55,7 +55,7 @@ export default async function ApplicationsPage() {
 
       <Table
         districts={districts.filter(Boolean).sort()}
-        callers={callers.map((c) => ({ id: String(c._id), name: c.name }))}
+        callers={callers}
         caps={{
           export: !!caps.export,
           delete: !!caps.deleteApplications,
