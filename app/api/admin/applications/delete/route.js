@@ -35,11 +35,17 @@ export async function POST(req) {
       { $set: { deletedAt: restore ? null : new Date() } }
     );
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email,
-      action: restore ? 'application.restore' : 'application.delete',
-      ip, meta: { count: result.modifiedCount, ids: ids.slice(0, 50) }
-    });
+    /* the delete/restore above already committed — a failed audit write
+       must never be reported back as the operation itself having failed */
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email,
+        action: restore ? 'application.restore' : 'application.delete',
+        ip, meta: { count: result.modifiedCount, ids: ids.slice(0, 50) }
+      });
+    } catch (logErr) {
+      console.error('[delete] operation succeeded but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true, count: result.modifiedCount });
 

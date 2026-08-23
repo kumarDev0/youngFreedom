@@ -80,10 +80,14 @@ export async function POST(req) {
       createdBy: session.id
     });
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'job.create',
-      target: job.slug, ip, meta: { title: job.title, status: job.status }
-    });
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'job.create',
+        target: job.slug, ip, meta: { title: job.title, status: job.status }
+      });
+    } catch (logErr) {
+      console.error('[job-create] job created but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true, id: String(job._id) });
   } catch (err) {

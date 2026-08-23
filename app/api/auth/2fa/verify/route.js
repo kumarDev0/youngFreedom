@@ -44,10 +44,14 @@ export async function POST(req) {
       if (idx > -1) {
         user.twoFactor.backupCodes.splice(idx, 1);
         ok = true;
-        await AuditLog.create({
-          actor: user._id, actorEmail: user.email, action: 'auth.backup_code_used',
-          ip, meta: { remaining: user.twoFactor.backupCodes.length }
-        });
+        try {
+          await AuditLog.create({
+            actor: user._id, actorEmail: user.email, action: 'auth.backup_code_used',
+            ip, meta: { remaining: user.twoFactor.backupCodes.length }
+          });
+        } catch (logErr) {
+          console.error('[2fa-verify] backup code accepted but audit logging failed:', logErr);
+        }
       }
     }
 
@@ -57,10 +61,16 @@ export async function POST(req) {
     user.lastLoginIp = ip;
     await user.save();
 
-    await AuditLog.create({ actor: user._id, actorEmail: user.email, action: 'auth.login', ip });
-
+    /* same reasoning as 2fa/confirm — the session must exist before this
+       request can be considered done, regardless of the log write */
     clearChallenge();
     await createSession(user);
+
+    try {
+      await AuditLog.create({ actor: user._id, actorEmail: user.email, action: 'auth.login', ip });
+    } catch (logErr) {
+      console.error('[2fa-verify] signed in but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({
       ok: true,

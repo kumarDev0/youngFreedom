@@ -46,12 +46,20 @@ export async function POST(req) {
     user.lastLoginIp = ip;
     await user.save();
 
-    await AuditLog.create({
-      actor: user._id, actorEmail: user.email, action: 'auth.2fa_enabled', ip
-    });
-
+    /* the session is the thing the user actually needs from this request —
+       it must exist before anything else runs, so a failure logging this
+       event can never leave someone with a correctly set-up account and no
+       way to actually be signed into it */
     clearChallenge();
     await createSession(user);
+
+    try {
+      await AuditLog.create({
+        actor: user._id, actorEmail: user.email, action: 'auth.2fa_enabled', ip
+      });
+    } catch (logErr) {
+      console.error('[2fa-confirm] 2FA enabled but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({
       ok: true,

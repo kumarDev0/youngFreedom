@@ -66,10 +66,19 @@ export async function POST(req) {
        after they accept */
     await User.create({ name: cleanName, email: cleanEmail, role, status: 'invited', createdBy: session.id });
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'team.invite',
-      target: cleanEmail, ip, meta: { role }
-    });
+    /* the invite and the placeholder user record already exist at this
+       point — if logging fails here and this fell through to the outer
+       catch, the owner would never receive the link at all, and a retry
+       would then incorrectly say "someone with this email already has an
+       account", blaming the wrong thing for what audit logging caused */
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'team.invite',
+        target: cleanEmail, ip, meta: { role }
+      });
+    } catch (logErr) {
+      console.error('[team-invite] invite created but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({
       ok: true,

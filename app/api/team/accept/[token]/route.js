@@ -81,11 +81,19 @@ export async function POST(req, { params }) {
     invite.usedAt = new Date();
     await invite.save();
 
-    await AuditLog.create({
-      actor: user._id, actorEmail: user.email, action: 'team.invite_accepted', ip
-    });
-
+    /* the challenge cookie is what lets the browser continue straight into
+       2FA setup — it has to exist before this request finishes, or a
+       logging failure would strand someone with a password set, an invite
+       already marked used, and no way to complete the flow or retry it */
     await createChallenge(user._id);
+
+    try {
+      await AuditLog.create({
+        actor: user._id, actorEmail: user.email, action: 'team.invite_accepted', ip
+      });
+    } catch (logErr) {
+      console.error('[team-accept-post] password set but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true });
 

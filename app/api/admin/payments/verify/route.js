@@ -50,11 +50,18 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Could not verify this payment. It may already have been processed.' }, { status: 409 });
     }
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'payment.manual_verify',
-      target: pending.appId, ip,
-      meta: { utr: pending.manualPayment.utr, amount: pending.fee.amount, name: pending.name }
-    });
+    /* the application already exists at this point — a logging failure
+       must never make the owner think a payment they just confirmed as
+       real money didn't actually go through */
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'payment.manual_verify',
+        target: pending.appId, ip,
+        meta: { utr: pending.manualPayment.utr, amount: pending.fee.amount, name: pending.name }
+      });
+    } catch (logErr) {
+      console.error('[verify-manual-payment] payment verified but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true, appId: result.appId });
 

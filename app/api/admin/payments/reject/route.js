@@ -39,10 +39,14 @@ export async function POST(req) {
     pending.manualPayment.utr = undefined;
     await pending.save();
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'payment.manual_reject',
-      target: pending.appId, ip, meta: { utr, reason: pending.manualPayment.rejectReason }
-    });
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'payment.manual_reject',
+        target: pending.appId, ip, meta: { utr, reason: pending.manualPayment.rejectReason }
+      });
+    } catch (logErr) {
+      console.error('[reject-manual-payment] rejection saved but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true });
 

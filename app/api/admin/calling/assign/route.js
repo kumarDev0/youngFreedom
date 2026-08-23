@@ -53,10 +53,23 @@ export async function POST(req) {
       { $set: { assignedTo: callerId, assignedAt: new Date() }, $unset: { callOutcome: 1 } }
     );
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'calling.assign',
-      target: caller.name, ip, meta: { count: result.modifiedCount, callerId }
-    });
+    /* The assignment above is the operation that actually matters and has
+       already committed. Audit logging is a side record of what happened —
+       if writing it fails for any reason, that must never turn a real,
+       successful assignment into a response that tells the owner it
+       failed. An earlier version let a log-write error fall through to the
+       same catch block as everything else, which silently assigned
+       candidates while reporting "Something went wrong" — the owner would
+       retry, assigning more on top, with no visible sign anything had
+       actually gone through until a caller's batch was mysteriously full. */
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'calling.assign',
+        target: caller.name, ip, meta: { count: result.modifiedCount, callerId }
+      });
+    } catch (logErr) {
+      console.error('[calling-assign] assignment succeeded but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true, count: result.modifiedCount });
 

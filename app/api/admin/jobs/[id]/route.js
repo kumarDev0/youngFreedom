@@ -35,10 +35,14 @@ export async function PATCH(req, { params }) {
       const job = await Job.findOneAndUpdate(filter, { $set: { status: body.status } }, { new: true });
       if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-      await AuditLog.create({
-        actor: session.id, actorEmail: session.email, action: 'job.status',
-        target: job.slug, ip, meta: { status: body.status }
-      });
+      try {
+        await AuditLog.create({
+          actor: session.id, actorEmail: session.email, action: 'job.status',
+          target: job.slug, ip, meta: { status: body.status }
+        });
+      } catch (logErr) {
+        console.error('[job-update] status changed but audit logging failed:', logErr);
+      }
       return NextResponse.json({ ok: true, status: job.status });
     }
 
@@ -63,10 +67,14 @@ export async function PATCH(req, { params }) {
 
     if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'job.update',
-      target: job.slug, ip, meta: { title: job.title }
-    });
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'job.update',
+        target: job.slug, ip, meta: { title: job.title }
+      });
+    } catch (logErr) {
+      console.error('[job-update] job updated but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -93,10 +101,14 @@ export async function DELETE(req, { params }) {
     const job = await Job.findOneAndUpdate(filter, { $set: { deletedAt: new Date(), status: 'closed' } });
     if (!job) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'job.delete',
-      target: job.slug, ip, meta: { title: job.title }
-    });
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'job.delete',
+        target: job.slug, ip, meta: { title: job.title }
+      });
+    } catch (logErr) {
+      console.error('[job-delete] job deleted but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -57,10 +57,17 @@ export async function PATCH(req, { params }) {
 
     await user.save();
 
-    await AuditLog.create({
-      actor: session.id, actorEmail: session.email, action: 'team.update',
-      target: user.email, ip, meta: changes
-    });
+    /* the status/role change above is already saved — a disable that
+       silently succeeded but was reported as failed is exactly the kind of
+       thing that gets retried, or worse, assumed not to have worked */
+    try {
+      await AuditLog.create({
+        actor: session.id, actorEmail: session.email, action: 'team.update',
+        target: user.email, ip, meta: changes
+      });
+    } catch (logErr) {
+      console.error('[team-update] change saved but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({ ok: true });
 

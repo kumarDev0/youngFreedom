@@ -52,16 +52,25 @@ export async function POST(req) {
     const ok = await verifyPassword(String(password || ''), user.passwordHash);
 
     if (!ok) {
+      const gettingLocked = (user.failedLogins || 0) + 1 >= MAX_FAILS;
       user.failedLogins = (user.failedLogins || 0) + 1;
-      if (user.failedLogins >= MAX_FAILS) {
+      if (gettingLocked) {
         user.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60000);
         user.failedLogins = 0;
-        await AuditLog.create({
-          actor: user._id, actorEmail: user.email, action: 'auth.locked',
-          ip, meta: { reason: 'too many failed logins' }
-        });
       }
+      /* the lockout itself must persist regardless of what happens to its
+         audit entry — save first, log second */
       await user.save();
+      if (gettingLocked) {
+        try {
+          await AuditLog.create({
+            actor: user._id, actorEmail: user.email, action: 'auth.locked',
+            ip, meta: { reason: 'too many failed logins' }
+          });
+        } catch (logErr) {
+          console.error('[login] account locked but audit logging failed:', logErr);
+        }
+      }
       return NextResponse.json(generic, { status: 401 });
     }
 

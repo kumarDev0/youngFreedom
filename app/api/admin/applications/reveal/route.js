@@ -39,10 +39,14 @@ export async function POST(req) {
     if (user.reveals?.date !== today) user.reveals = { date: today, count: 0 };
 
     if (user.reveals.count >= limit) {
-      await AuditLog.create({
-        actor: user._id, actorEmail: user.email, action: 'application.reveal_blocked',
-        target: id, ip, meta: { limit }
-      });
+      try {
+        await AuditLog.create({
+          actor: user._id, actorEmail: user.email, action: 'application.reveal_blocked',
+          target: id, ip, meta: { limit }
+        });
+      } catch (logErr) {
+        console.error('[reveal] audit logging failed for a blocked reveal:', logErr);
+      }
       return NextResponse.json({
         error: `Daily limit reached (${limit} numbers). It resets tomorrow.`
       }, { status: 429 });
@@ -57,11 +61,18 @@ export async function POST(req) {
     user.reveals.count += 1;
     await user.save();
 
-    await AuditLog.create({
-      actor: user._id, actorEmail: user.email, action: 'application.reveal',
-      target: app.appId, ip,
-      meta: { name: app.name, countToday: user.reveals.count, limit }
-    });
+    /* the reveal has already happened and the daily count is already spent
+       — a logging failure here must not cost the candidate's phone number
+       from ever reaching the person who just used up one of their reveals */
+    try {
+      await AuditLog.create({
+        actor: user._id, actorEmail: user.email, action: 'application.reveal',
+        target: app.appId, ip,
+        meta: { name: app.name, countToday: user.reveals.count, limit }
+      });
+    } catch (logErr) {
+      console.error('[reveal] reveal succeeded but audit logging failed:', logErr);
+    }
 
     return NextResponse.json({
       phone: app.phone,
