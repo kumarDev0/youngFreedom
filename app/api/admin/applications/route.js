@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db.js';
 import Application from '../../../../models/Application.js';
+import User from '../../../../models/User.js';
 import { requireSession } from '../../../../lib/auth.js';
 import { CAPS, scopeOf } from '../../../../lib/permissions.js';
 import { maskPhone, maskEmail } from '../../../../lib/mask.js';
@@ -51,6 +52,10 @@ export async function GET(req) {
     if (qual) filter.qualification = qual;
     if (district) filter.district = district;
     if (payment) filter['payment.status'] = payment;
+    /* the one filter that directly prevents the exact confusion of handing
+       the same candidate to two different callers by accident — narrows
+       the whole list down to only what nobody has ever been given yet */
+    if (url.searchParams.get('unassigned') === '1') filter.assignedTo = null;
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
@@ -77,6 +82,17 @@ export async function GET(req) {
       Application.countDocuments(filter)
     ]);
 
+    /* one lookup for every distinct caller on this page of rows, rather
+       than a query per row — this is what lets the table show "assigned to
+       Rahul" instead of just a raw id nobody can read at a glance */
+    const callerIds = [...new Set(rows.map((r) => r.assignedTo).filter(Boolean).map(String))];
+    const callerNames = callerIds.length
+      ? Object.fromEntries(
+          (await User.find({ _id: { $in: callerIds } }).select('name').lean())
+            .map((u) => [String(u._id), u.name])
+        )
+      : {};
+
     const items = rows.map((r) => {
       const base = {
         id: String(r._id),
@@ -89,7 +105,8 @@ export async function GET(req) {
         stage: r.stage,
         callOutcome: r.callOutcome || null,
         createdAt: r.createdAt,
-        assignedTo: r.assignedTo ? String(r.assignedTo) : null
+        assignedTo: r.assignedTo ? String(r.assignedTo) : null,
+        assignedToName: r.assignedTo ? (callerNames[String(r.assignedTo)] || 'Former team member') : null
       };
 
       /* phone is masked for everyone; revealing it is a separate, logged action */

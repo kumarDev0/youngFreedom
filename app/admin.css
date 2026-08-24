@@ -690,3 +690,109 @@ button{font:inherit;color:inherit}
   .invite-trust{padding:12px 13px}
   .invite-role-line{margin-bottom:24px}
 }
+
+/* ============================================================
+   OUTCOME BREAKDOWN — premium gradient cards
+   Shared by a caller's own Overview and the owner's Calling Team
+   screen (company-wide, and per-caller when expanded).
+   ============================================================ */
+.outcome-grid{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:12px;
+}
+.outcome-card{
+  position:relative;overflow:hidden;padding:18px 14px;text-align:center;
+  border:1px solid rgba(255,255,255,.09);
+  background:linear-gradient(155deg,rgba(255,255,255,.05),rgba(255,255,255,.012));
+  transition:transform .35s var(--ease-out),border-color .35s var(--ease);
+}
+.outcome-card:hover{transform:translateY(-2px)}
+.outcome-card::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:2px;opacity:.95;
+}
+.outcome-card::after{
+  content:"";position:absolute;right:-30px;top:-30px;width:100px;height:100px;
+  border-radius:50%;filter:blur(30px);opacity:.4;pointer-events:none;
+}
+.outcome-count{
+  display:block;font-family:var(--f-display);font-weight:700;letter-spacing:-.03em;
+  font-size:clamp(1.5rem,3vw,1.9rem);line-height:1.1;margin-bottom:8px;
+  font-variant-numeric:tabular-nums;
+}
+.outcome-label{
+  display:block;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.08em;
+  color:var(--steel);line-height:1.4;text-transform:uppercase;
+}
+
+/* six distinct gradient identities — mint (best) through slate (neutral) */
+.tone-mint::before{background:linear-gradient(90deg,var(--mint),#7FF0E0)}
+.tone-mint::after{background:rgba(46,211,198,.5)}
+.tone-mint .outcome-count{color:var(--mint)}
+
+.tone-violet::before{background:linear-gradient(90deg,#8B7BFF,#B9A8FF)}
+.tone-violet::after{background:rgba(139,123,255,.45)}
+.tone-violet .outcome-count{
+  background:linear-gradient(100deg,#8B7BFF,#B9A8FF);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+.tone-amber::before{background:linear-gradient(90deg,var(--amber),#FFE3BC)}
+.tone-amber::after{background:rgba(255,201,138,.4)}
+.tone-amber .outcome-count{color:var(--amber)}
+
+.tone-rose::before{background:linear-gradient(90deg,var(--rose),#FFB8C4)}
+.tone-rose::after{background:rgba(255,138,155,.4)}
+.tone-rose .outcome-count{color:var(--rose)}
+
+.tone-steel::before{background:linear-gradient(90deg,var(--steel),var(--steel-dk))}
+.tone-steel::after{background:rgba(143,163,196,.3)}
+.tone-steel .outcome-count{color:var(--steel)}
+
+.tone-slate::before{background:linear-gradient(90deg,var(--steel-dk),rgba(90,110,144,.5))}
+.tone-slate::after{background:rgba(90,110,144,.25)}
+.tone-slate .outcome-count{color:var(--steel-dk)}
+
+/* the compact variant used inside an expanded table row */
+.outcome-grid-sm{gap:8px;padding:14px 4px}
+.outcome-grid-sm .outcome-card{padding:12px 8px}
+.outcome-grid-sm .outcome-count{font-size:1.15rem;margin-bottom:5px}
+.outcome-grid-sm .outcome-label{font-size:.5rem}
+
+/* ---------- assignment tracking ---------- */
+.assignee-pill{
+  display:inline-block;padding:4px 10px;font-size:.76rem;
+  border:1px solid var(--line-2);background:rgba(255,255,255,.04);color:var(--porcelain);
+}
+.assignee-pill.unassigned{color:var(--steel-dk);border-style:dashed;background:transparent}
+
+.unassigned-toggle{
+  display:flex;align-items:center;gap:8px;height:40px;padding:0 4px;cursor:pointer;
+  font-size:.8rem;color:var(--steel);user-select:none;
+}
+.unassigned-toggle input{width:16px;height:16px;accent-color:var(--signal);cursor:pointer}
+
+/* ---------- expandable caller row ---------- */
+.row-expand{
+  width:26px;height:26px;display:grid;place-items:center;cursor:pointer;
+  border:1px solid var(--line-2);background:rgba(255,255,255,.04);
+}
+.row-expand svg{width:12px;height:12px;stroke:var(--steel);fill:none;stroke-width:2.4;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .25s var(--ease-out)}
+.row-expand:hover{background:rgba(255,255,255,.1)}
+.row-detail td{padding:0 14px 18px!important;border-bottom:1px solid var(--line)}
+
+/* ============================================================
+   RESPONSIVE — outcome grid across phones and tablets
+   ============================================================ */
+@media(max-width:980px){
+  .outcome-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:640px){
+  .outcome-grid{grid-template-columns:repeat(2,1fr);gap:9px}
+  .outcome-card{padding:15px 10px}
+  .outcome-count{font-size:1.4rem}
+  .outcome-label{font-size:.54rem}
+  .outcome-grid-sm{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:400px){
+  .outcome-grid:not(.outcome-grid-sm){grid-template-columns:repeat(2,1fr)}
+}

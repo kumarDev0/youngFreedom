@@ -4,6 +4,8 @@ import { CAPS } from '../../../lib/permissions.js';
 import { TrendChart, DonutChart, BarList, Funnel } from './Charts.js';
 import { connectDB } from '../../../lib/db.js';
 import Application from '../../../models/Application.js';
+import { getOutcomeBreakdown } from '../../../lib/callStats.js';
+import OutcomeGrid from './OutcomeGrid.js';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,15 +31,14 @@ export default async function OverviewPage() {
    */
   if (session.role === 'caller') {
     await connectDB();
-    const [assigned, resolved, interested, nextUp] = await Promise.all([
-      Application.countDocuments({ assignedTo: session.id, deletedAt: null }),
-      Application.countDocuments({ assignedTo: session.id, deletedAt: null, callOutcome: { $exists: true } }),
-      Application.countDocuments({ assignedTo: session.id, deletedAt: null, callOutcome: 'interested' }),
+    const [breakdown, nextUp] = await Promise.all([
+      /* all-time, cumulative — "1 month me maine 100 interested kiya" —
+         never reset daily, only scoped to this caller's own candidates */
+      getOutcomeBreakdown({ assignedTo: session.id, deletedAt: null }),
       Application.find({ assignedTo: session.id, deletedAt: null, callOutcome: { $exists: false } })
         .sort({ assignedAt: -1 }).limit(5)
         .select('appId name district qualification assignedAt').lean()
     ]);
-    const pending = Math.max(0, assigned - resolved);
 
     return (
       <>
@@ -46,16 +47,15 @@ export default async function OverviewPage() {
             <span className="eyebrow">{greeting}</span>
             <h1>Overview</h1>
           </div>
+          <div className="head-meta">
+            <span className="pill">{breakdown.assigned} assigned all-time</span>
+            <span className="pill">{breakdown.pending} pending</span>
+          </div>
         </header>
 
-        <section className="kpi-grid">
-          <Kpi label="Assigned to you" value={assigned} sub="candidates on your list" accent="blue" />
-          <Kpi label="Resolved" value={resolved} sub="have a call outcome logged" accent="green" />
-          <Kpi label="Still pending" value={pending} sub="waiting for a call" accent="amber" />
-          <Kpi label="Interested" value={interested} sub="marked interested so far" accent="cyan" />
-        </section>
+        <OutcomeGrid breakdown={breakdown.breakdown} />
 
-        <section className="card">
+        <section className="card" style={{ marginTop: 16 }}>
           <div className="card-head">
             <h2>Next up</h2>
             <a className="card-link" href="/admin/calls">Go to my calls →</a>
@@ -63,8 +63,8 @@ export default async function OverviewPage() {
 
           {nextUp.length === 0 ? (
             <div className="empty">
-              <p><b>{assigned === 0 ? 'Nothing assigned yet' : "You're all caught up"}</b></p>
-              <p>{assigned === 0 ? 'Ask your team lead to assign you some candidates.' : 'Every candidate assigned to you has a result logged.'}</p>
+              <p><b>{breakdown.assigned === 0 ? 'Nothing assigned yet' : "You're all caught up"}</b></p>
+              <p>{breakdown.assigned === 0 ? 'Ask your team lead to assign you some candidates.' : 'Every candidate assigned to you has a result logged.'}</p>
             </div>
           ) : (
             <div className="table-wrap">

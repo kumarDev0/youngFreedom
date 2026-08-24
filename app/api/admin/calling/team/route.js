@@ -3,6 +3,7 @@ import { connectDB } from '../../../../../lib/db.js';
 import Application from '../../../../../models/Application.js';
 import User from '../../../../../models/User.js';
 import { requireCapability } from '../../../../../lib/auth.js';
+import { getOutcomeBreakdown, OUTCOME_TYPES } from '../../../../../lib/callStats.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,12 @@ export async function GET() {
             _id: '$assignedTo',
             assigned: { $sum: 1 },
             resolved: { $sum: { $cond: [{ $ifNull: ['$callOutcome', false] }, 1, 0] } },
-            interested: { $sum: { $cond: [{ $eq: ['$callOutcome', 'interested'] }, 1, 0] } }
+            interested:         { $sum: { $cond: [{ $eq: ['$callOutcome', 'interested'] }, 1, 0] } },
+            ready_for_interview: { $sum: { $cond: [{ $eq: ['$callOutcome', 'ready_for_interview'] }, 1, 0] } },
+            call_later:         { $sum: { $cond: [{ $eq: ['$callOutcome', 'call_later'] }, 1, 0] } },
+            not_interested:     { $sum: { $cond: [{ $eq: ['$callOutcome', 'not_interested'] }, 1, 0] } },
+            not_picked:         { $sum: { $cond: [{ $eq: ['$callOutcome', 'not_picked'] }, 1, 0] } },
+            switched_off:       { $sum: { $cond: [{ $eq: ['$callOutcome', 'switched_off'] }, 1, 0] } }
         } }
       ]),
 
@@ -80,12 +86,22 @@ export async function GET() {
            just "hasn't been given anything yet" (assigned === 0) */
         readyForMore: t.assigned > 0 && pending === 0,
         interested: t.interested,
+        /* the full outcome breakdown, per caller — everything the owner
+           asked to see individually: "1 dost ne 10 me se 3 interested, 5
+           not interested, 2 no answer" */
+        outcomes: OUTCOME_TYPES.map((o) => ({ ...o, count: t[o.key] || 0 })),
         revealsToday, resolvedToday, flagged,
         lastActiveAt: c.callStats?.lastActiveAt || c.lastLoginAt || null
       };
     });
 
-    return NextResponse.json({ rows });
+    /* the company-wide total across every caller combined — this is the
+       "50 diye, 20 interested, 10 no answer, 20 not interested" figure the
+       owner reads at a glance, cumulative since the day this started, not
+       reset daily */
+    const company = await getOutcomeBreakdown({ assignedTo: { $ne: null }, deletedAt: null });
+
+    return NextResponse.json({ rows, company });
 
   } catch (err) {
     if (err.status) return NextResponse.json({ error: err.message }, { status: err.status });

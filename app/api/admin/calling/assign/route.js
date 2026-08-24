@@ -23,7 +23,7 @@ export async function POST(req) {
   const ip = clientIp(req);
   try {
     const session = await requireCapability('assignCalls');
-    const { ids, callerId } = await req.json();
+    const { ids, callerId, force } = await req.json();
 
     if (!Array.isArray(ids) || !ids.length) {
       return NextResponse.json({ error: 'Select at least one application.' }, { status: 400 });
@@ -54,6 +54,35 @@ export async function POST(req) {
       return NextResponse.json({
         error: `${caller.name} already has ${currentLoad} unresolved. Assigning ${ids.length} more would exceed the ${BATCH_CAP} limit — wait for them to clear some first.`
       }, { status: 409 });
+    }
+
+    /**
+     * The exact mistake this guards against: someone already has an
+     * outcome logged for one of these candidates — a real call already
+     * happened — and reassigning would silently erase that (assign
+     * $unsets callOutcome so the new owner starts clean) and send the same
+     * person out to be called again by someone else. This is checked
+     * before the update, not after, and requires the owner to explicitly
+     * confirm with `force: true` once they have seen what would be lost.
+     */
+    if (!force) {
+      const alreadyWorked = await Application.find({
+        _id: { $in: ids }, deletedAt: null, callOutcome: { $exists: true }
+      }).select('name callOutcome assignedTo').lean();
+
+      if (alreadyWorked.length) {
+        const callerIds = [...new Set(alreadyWorked.map((a) => String(a.assignedTo)).filter(Boolean))];
+        const priorCallers = await User.find({ _id: { $in: callerIds } }).select('name').lean();
+        const nameOf = Object.fromEntries(priorCallers.map((u) => [String(u._id), u.name]));
+
+        return NextResponse.json({
+          error: `${alreadyWorked.length} of these already have a call result logged, from ${
+            [...new Set(alreadyWorked.map((a) => nameOf[String(a.assignedTo)] || 'a previous caller'))].join(', ')
+          }. Reassigning will erase that result and send them out to be called again.`,
+          needsConfirmation: true,
+          alreadyWorked: alreadyWorked.map((a) => ({ name: a.name, outcome: a.callOutcome }))
+        }, { status: 409 });
+      }
     }
 
     const result = await Application.updateMany(

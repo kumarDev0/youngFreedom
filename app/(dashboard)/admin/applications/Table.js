@@ -21,7 +21,7 @@ export default function Table({ districts, callers = [], caps }) {
   const [revealed, setRevealed] = useState({});
   const [toast, setToast] = useState('');
   const [trash, setTrash] = useState(false);
-  const [f, setF] = useState({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '' });
+  const [f, setF] = useState({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '' });
   const [page, setPage] = useState(1);
   const debounce = useRef(null);
   const [assigning, setAssigning] = useState(false);
@@ -150,7 +150,7 @@ export default function Table({ districts, callers = [], caps }) {
     } catch (e) { flash(e.message); }
   }
 
-  async function assignSelected() {
+  async function assignSelected(force = false) {
     const ids = [...selected];
     if (!ids.length) return flash('Select some rows first');
     if (!assignTo) return flash('Choose a caller first');
@@ -159,10 +159,23 @@ export default function Table({ districts, callers = [], caps }) {
     try {
       const res = await fetch('/api/admin/calling/assign', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ids, callerId: assignTo })
+        body: JSON.stringify({ ids, callerId: assignTo, force })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+
+      if (!res.ok) {
+        /* the server found candidates that already have a real call result
+           on them — the owner sees exactly what would be lost and decides,
+           rather than the tool silently overwriting someone's finished work */
+        if (data.needsConfirmation) {
+          const ok = window.confirm(data.error + '\n\nAssign anyway?');
+          if (ok) { setAssigning(false); return assignSelected(true); }
+          setAssigning(false);
+          return;
+        }
+        throw new Error(data.error);
+      }
+
       flash(`${data.count} assigned`);
       setAssignTo('');
       load();
@@ -194,12 +207,19 @@ export default function Table({ districts, callers = [], caps }) {
         <Select label="District" value={f.district} onChange={(v) => setFilter('district', v)} options={districts} />
         {caps.viewPayments &&
           <Select label="Payment" value={f.payment} onChange={(v) => setFilter('payment', v)} options={['paid', 'refunded']} />}
+        {caps.assignCalls && (
+          <label className="unassigned-toggle">
+            <input type="checkbox" checked={f.unassigned === '1'}
+                   onChange={(e) => setFilter('unassigned', e.target.checked ? '1' : '')} />
+            <span>Unassigned only</span>
+          </label>
+        )}
         <label className="date"><span>From</span>
           <input type="date" value={f.from} onChange={(e) => setFilter('from', e.target.value)} /></label>
         <label className="date"><span>To</span>
           <input type="date" value={f.to} onChange={(e) => setFilter('to', e.target.value)} /></label>
         {active > 0 && (
-          <button className="clear" onClick={() => { setF({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '' }); setPage(1); }}>
+          <button className="clear" onClick={() => { setF({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '' }); setPage(1); }}>
             Clear {active}
           </button>
         )}
@@ -232,7 +252,7 @@ export default function Table({ districts, callers = [], caps }) {
                 </option>
               ))}
             </select>
-            <button disabled={assigning || !assignTo} onClick={assignSelected}>
+            <button disabled={assigning || !assignTo} onClick={() => assignSelected(false)}>
               {assigning ? 'Assigning…' : 'Assign'}
             </button>
           </span>
@@ -260,6 +280,7 @@ export default function Table({ districts, callers = [], caps }) {
                   <th className="tick"><input type="checkbox" checked={allOnPage} onChange={toggleAll} aria-label="Select all" /></th>
                   <th>ID</th><th>Name</th><th>Phone</th><th>District</th>
                   <th>Qualification</th><th>Trade</th><th>Stage</th>
+                  {caps.assignCalls && <th>Assigned to</th>}
                   {caps.viewPayments && <th>Fee</th>}
                   <th>Applied</th>
                 </tr>
@@ -282,6 +303,13 @@ export default function Table({ districts, callers = [], caps }) {
                     <td>{r.qualification}</td>
                     <td className="muted">{r.trade || '—'}</td>
                     <td><span className={`tag tag-${r.stage}`}>{r.stage}</span></td>
+                    {caps.assignCalls && (
+                      <td>
+                        {r.assignedToName
+                          ? <span className="assignee-pill">{r.assignedToName}</span>
+                          : <span className="assignee-pill unassigned">Unassigned</span>}
+                      </td>
+                    )}
                     {caps.viewPayments && <td className="mono">{r.fee ? '\u20B9' + r.fee : '—'}</td>}
                     <td className="muted">{new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</td>
                   </tr>
