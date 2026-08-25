@@ -61,7 +61,10 @@ export default async function ApplicationsPage() {
           delete: !!caps.deleteApplications,
           viewPayments: !!caps.viewPayments,
           assignCalls: !!caps.assignCalls,
-          revealLimit: caps.revealLimit || 0
+          revealLimit: caps.revealLimit || 0,
+          /* a caller only ever logs a call outcome — moving the pipeline
+             stage forward is a recruiter/admin/owner decision */
+          canChangeStage: session.role !== 'caller' && session.role !== 'viewer'
         }}
       />
     </>

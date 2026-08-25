@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import DetailPanel from './DetailPanel.js';
 
 const STAGES = ['new', 'called', 'shortlisted', 'interviewed', 'placed', 'rejected'];
 const QUALS = ['10th', '12th', 'ITI', 'Diploma', 'B.Tech', 'Graduation'];
@@ -26,6 +27,7 @@ export default function Table({ districts, callers = [], caps }) {
   const debounce = useRef(null);
   const [assigning, setAssigning] = useState(false);
   const [assignTo, setAssignTo] = useState('');
+  const [detailId, setDetailId] = useState(null);
 
   const query = useMemo(() => {
     const p = new URLSearchParams();
@@ -287,12 +289,14 @@ export default function Table({ districts, callers = [], caps }) {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className={selected.has(r.id) ? 'picked' : ''}>
-                    <td className="tick"><input type="checkbox" checked={selected.has(r.id)}
+                  <tr key={r.id} className={selected.has(r.id) ? 'picked' : ''}
+                      onClick={() => setDetailId(r.id)} style={{ cursor: 'pointer' }}>
+                    <td className="tick" onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" checked={selected.has(r.id)}
                         onChange={() => toggle(r.id)} aria-label={`Select ${r.name}`} /></td>
                     <td className="mono">{r.appId}</td>
                     <td><b>{r.name}</b></td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       {revealed[r.id]
                         ? <a className="phone" href={`tel:${revealed[r.id]}`}>{revealed[r.id]}</a>
                         : caps.revealLimit > 0
@@ -332,6 +336,13 @@ export default function Table({ districts, callers = [], caps }) {
       </div>
 
       {toast && <div className="toast">{toast}</div>}
+
+      <DetailPanel
+        id={detailId}
+        canChangeStage={caps.canChangeStage}
+        onClose={() => setDetailId(null)}
+        onChanged={load}
+      />
     </>
   );
 }

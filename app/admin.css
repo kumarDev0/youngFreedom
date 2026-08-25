@@ -796,3 +796,208 @@ button{font:inherit;color:inherit}
 @media(max-width:400px){
   .outcome-grid:not(.outcome-grid-sm){grid-template-columns:repeat(2,1fr)}
 }
+
+/* ============================================================
+   LUXURY DESIGN LANGUAGE — Audit Log + Application Detail Panel
+   A deliberately different register from the rest of the dashboard:
+   a deep plum/midnight base instead of navy, a champagne-gold accent
+   for the highest-trust surfaces (money, history), sharp italic
+   display type. Both features share this so they read as one
+   distinct "vault" tier of the product, not just more of the same.
+   ============================================================ */
+:root{
+  --lux-bg-1:#160C22; --lux-bg-2:#0C0714;
+  --lux-gold:#E8C77A; --lux-gold-2:#F5E3B3;
+  --lux-rose:#D88A9A; --lux-violet:#A78BFA; --lux-cyan:#7DD8E8;
+  --lux-ink:#F2E8D8; --lux-steel:#B8A9C9; --lux-steel-dk:#6B5D80;
+  --lux-line:rgba(232,199,122,.14);
+}
+
+.eyebrow-lux{
+  font-family:var(--f-mono);font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--lux-gold);
+}
+.h-lux{
+  font-family:var(--f-display);font-style:italic;font-weight:700;letter-spacing:-.03em;
+  font-size:clamp(1.7rem,3.4vw,2.3rem);
+  background:linear-gradient(100deg,var(--lux-gold-2) 0%,var(--lux-gold) 45%,#C9A868 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+
+/* ---------- Audit Log filters ---------- */
+.lux-filters{
+  display:flex;flex-wrap:wrap;gap:10px;padding:16px;margin-bottom:16px;
+  border:1px solid var(--lux-line);
+  background:linear-gradient(160deg,rgba(232,199,122,.05),rgba(12,7,20,.4));
+}
+.lux-input{
+  height:40px;padding:0 13px;font-size:.84rem;color:var(--lux-ink);
+  border:1px solid rgba(232,199,122,.2);background:rgba(22,12,34,.6);
+  min-width:150px;flex:1 1 150px;
+}
+.lux-input:focus{outline:none;border-color:var(--lux-gold);box-shadow:0 0 0 3px rgba(232,199,122,.15)}
+select.lux-input{cursor:pointer}
+.lux-date{display:flex;align-items:center;gap:8px;font-size:.76rem;color:var(--lux-steel)}
+.lux-date input{height:40px;padding:0 10px;border:1px solid rgba(232,199,122,.2);background:rgba(22,12,34,.6);color:var(--lux-ink);color-scheme:dark}
+.lux-clear{
+  height:40px;padding:0 16px;border:1px solid rgba(232,199,122,.25);background:transparent;
+  color:var(--lux-gold);font-size:.78rem;font-weight:700;cursor:pointer;letter-spacing:.03em;
+}
+.lux-clear:hover{background:rgba(232,199,122,.08)}
+
+/* ---------- Audit Log timeline ---------- */
+.lux-card{
+  border:1px solid var(--lux-line);
+  background:linear-gradient(165deg,var(--lux-bg-1),var(--lux-bg-2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.lux-timeline{list-style:none;margin:0;padding:0}
+.lux-row{border-bottom:1px solid var(--lux-line)}
+.lux-row:last-child{border-bottom:0}
+.lux-row-main{
+  width:100%;display:flex;align-items:center;gap:12px;padding:15px 18px;
+  background:none;border:0;cursor:pointer;text-align:left;font-family:inherit;
+  transition:background .2s;flex-wrap:wrap;
+}
+.lux-row-main:hover{background:rgba(232,199,122,.04)}
+.lux-dot{width:8px;height:8px;border-radius:50%;flex:0 0 8px}
+.lux-badge{
+  padding:5px 11px;font-family:var(--f-mono);font-size:.66rem;font-weight:700;letter-spacing:.02em;
+  border:1px solid currentColor;white-space:nowrap;
+}
+.lux-actor{font-size:.82rem;color:var(--lux-ink);font-weight:600}
+.lux-target{font-family:var(--f-mono);font-size:.76rem;color:var(--lux-steel)}
+.lux-time{margin-left:auto;font-size:.72rem;color:var(--lux-steel-dk);white-space:nowrap}
+
+/* six tone variants, matching the badge + dot color */
+.tone-lux-gold   .lux-dot,.tone-lux-gold   .lux-badge{color:var(--lux-gold)}
+.tone-lux-gold   .lux-dot{background:var(--lux-gold);box-shadow:0 0 8px var(--lux-gold)}
+.tone-lux-cyan   .lux-dot,.tone-lux-cyan   .lux-badge{color:var(--lux-cyan)}
+.tone-lux-cyan   .lux-dot{background:var(--lux-cyan);box-shadow:0 0 8px var(--lux-cyan)}
+.tone-lux-violet .lux-dot,.tone-lux-violet .lux-badge{color:var(--lux-violet)}
+.tone-lux-violet .lux-dot{background:var(--lux-violet);box-shadow:0 0 8px var(--lux-violet)}
+.tone-lux-amber  .lux-dot,.tone-lux-amber  .lux-badge{color:var(--amber)}
+.tone-lux-amber  .lux-dot{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.tone-lux-rose   .lux-dot,.tone-lux-rose   .lux-badge{color:var(--lux-rose)}
+.tone-lux-rose   .lux-dot{background:var(--lux-rose);box-shadow:0 0 8px var(--lux-rose)}
+.tone-lux-mint   .lux-dot,.tone-lux-mint   .lux-badge{color:var(--mint)}
+.tone-lux-mint   .lux-dot{background:var(--mint);box-shadow:0 0 8px var(--mint)}
+.tone-lux-steel  .lux-dot,.tone-lux-steel  .lux-badge{color:var(--lux-steel)}
+.tone-lux-steel  .lux-dot{background:var(--lux-steel)}
+
+.lux-detail{padding:0 18px 18px 38px}
+.lux-detail > div{display:flex;gap:8px;font-size:.78rem;margin-bottom:6px}
+.lux-detail > div span{color:var(--lux-steel-dk);min-width:34px}
+.lux-detail code{font-family:var(--f-mono);color:var(--lux-ink);word-break:break-all}
+.lux-meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px 16px}
+.lux-meta-grid > div{display:flex;flex-direction:column;gap:2px}
+.lux-meta-grid span{font-family:var(--f-mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--lux-steel-dk)}
+
+/* ============================================================
+   APPLICATION DETAIL PANEL — slide-in from the right
+   ============================================================ */
+.dp-overlay{
+  position:fixed;inset:0;z-index:210;display:flex;justify-content:flex-end;
+  background:rgba(8,4,14,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  animation:dpFade .25s var(--ease-out) both;
+}
+@keyframes dpFade{from{opacity:0}to{opacity:1}}
+.dp-panel{
+  position:relative;width:min(440px,100%);height:100%;overflow-y:auto;
+  padding:30px 26px 60px;
+  background:linear-gradient(175deg,var(--lux-bg-1) 0%,var(--lux-bg-2) 100%);
+  border-left:1px solid var(--lux-line);
+  box-shadow:-30px 0 70px -20px rgba(0,0,0,.7);
+  animation:dpSlide .35s var(--ease-out) both;
+}
+@keyframes dpSlide{from{transform:translateX(28px);opacity:0}to{transform:none;opacity:1}}
+.dp-close{
+  position:absolute;top:20px;right:20px;width:32px;height:32px;display:grid;place-items:center;
+  border:1px solid rgba(232,199,122,.22);background:rgba(232,199,122,.05);color:var(--lux-gold);
+  font-size:1.1rem;cursor:pointer;
+}
+.dp-close:hover{background:rgba(232,199,122,.14)}
+.dp-loading{color:var(--lux-steel);font-size:.9rem;padding-top:40px;text-align:center}
+
+.dp-eyebrow{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.16em;color:var(--lux-gold);text-transform:uppercase}
+.dp-name{
+  font-family:var(--f-display);font-style:italic;font-weight:700;letter-spacing:-.03em;
+  font-size:clamp(1.5rem,3vw,1.85rem);margin:10px 0 6px;
+  background:linear-gradient(100deg,var(--lux-gold-2),var(--lux-gold));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.dp-sub{font-size:.86rem;color:var(--lux-steel);margin-bottom:20px;line-height:1.5}
+
+.dp-phone{margin-bottom:22px}
+.dp-phone-value{
+  display:block;text-align:center;padding:12px;font-family:var(--f-mono);font-size:1rem;
+  color:var(--lux-gold);border:1px solid rgba(232,199,122,.3);background:rgba(232,199,122,.06);text-decoration:none;
+}
+
+.dp-section{padding-top:20px;margin-top:20px;border-top:1px solid var(--lux-line)}
+.dp-label{
+  display:block;font-family:var(--f-mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--lux-steel-dk);margin-bottom:12px;
+}
+.dp-meta-row{display:flex;justify-content:space-between;font-size:.86rem;padding:6px 0;color:var(--lux-steel)}
+.dp-meta-row b{color:var(--lux-ink);font-weight:700}
+.dp-empty-text{font-size:.82rem;color:var(--lux-steel-dk);font-style:italic}
+.dp-resume-link{color:var(--lux-cyan);text-decoration:none;font-size:.88rem;font-weight:600}
+.dp-resume-link:hover{text-decoration:underline}
+
+.dp-stages{display:flex;flex-wrap:wrap;gap:7px}
+.dp-stages button{
+  padding:7px 12px;font-size:.72rem;font-weight:700;text-transform:capitalize;cursor:pointer;
+  border:1px solid rgba(232,199,122,.2);background:rgba(255,255,255,.02);color:var(--lux-steel);
+}
+.dp-stages button:disabled{opacity:.5;cursor:not-allowed}
+.dp-stages button.on{
+  background:linear-gradient(135deg,var(--lux-gold),#C9A868);color:#241708;border-color:transparent;
+  box-shadow:0 6px 16px -6px rgba(232,199,122,.5);
+}
+
+.dp-calls{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.dp-calls li{display:flex;flex-direction:column;gap:3px}
+.dp-call-outcome{font-size:.86rem;font-weight:700;color:var(--lux-ink)}
+.dp-call-meta{font-size:.72rem;color:var(--lux-steel-dk)}
+.dp-call-note{font-size:.8rem;color:var(--lux-steel);font-style:italic}
+
+.dp-note-add{display:flex;gap:8px;margin-bottom:14px}
+.dp-note-add input{
+  flex:1;height:38px;padding:0 12px;font-size:.82rem;color:var(--lux-ink);
+  border:1px solid rgba(232,199,122,.2);background:rgba(255,255,255,.02);
+}
+.dp-note-add input:focus{outline:none;border-color:var(--lux-gold)}
+.dp-note-add button{
+  padding:0 16px;border:1px solid rgba(232,199,122,.3);background:rgba(232,199,122,.08);
+  color:var(--lux-gold);font-size:.78rem;font-weight:700;cursor:pointer;
+}
+.dp-note-add button:disabled{opacity:.5;cursor:not-allowed}
+.dp-notes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.dp-notes li{padding:10px 12px;border:1px solid var(--lux-line);background:rgba(255,255,255,.015)}
+.dp-note-text{display:block;font-size:.84rem;color:var(--lux-ink);margin-bottom:5px;line-height:1.5}
+.dp-note-meta{display:block;font-size:.68rem;color:var(--lux-steel-dk)}
+
+/* ============================================================
+   RESPONSIVE — phones and tablets
+   ============================================================ */
+@media(max-width:900px){
+  .lux-time{margin-left:0;flex-basis:100%}
+}
+@media(max-width:640px){
+  .lux-filters{padding:12px;gap:8px}
+  .lux-input{min-width:100%;flex-basis:100%}
+  .lux-row-main{padding:13px 14px;gap:8px}
+  .lux-badge{font-size:.6rem;padding:4px 9px}
+  .lux-detail{padding:0 14px 14px 30px}
+
+  .dp-panel{width:100%;padding:24px 18px 50px}
+  .dp-name{font-size:1.4rem}
+  .dp-stages{gap:6px}
+  .dp-stages button{font-size:.66rem;padding:6px 10px}
+  .dp-note-add{flex-direction:column}
+  .dp-note-add button{padding:10px}
+}
+@media(max-width:400px){
+  .lux-badge{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+}
