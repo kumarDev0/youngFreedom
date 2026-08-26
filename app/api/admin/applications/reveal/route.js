@@ -5,6 +5,7 @@ import User from '../../../../../models/User.js';
 import AuditLog from '../../../../../models/AuditLog.js';
 import { requireSession } from '../../../../../lib/auth.js';
 import { revealLimitOf, scopeOf } from '../../../../../lib/permissions.js';
+import Job from '../../../../../models/Job.js';
 import { clientIp } from '../../../../../lib/ratelimit.js';
 
 export const runtime = 'nodejs';
@@ -54,6 +55,10 @@ export async function POST(req) {
 
     const filter = { _id: id, deletedAt: null };
     if (scopeOf(session.role) === 'assigned') filter.assignedTo = session.id;
+    if (scopeOf(session.role) === 'ownJobs') {
+      const ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+      filter.jobId = { $in: ownJobIds };
+    }
 
     const app = await Application.findOne(filter).select('phone appId name').lean();
     if (!app) return NextResponse.json({ error: 'Not found' }, { status: 404 });

@@ -3,6 +3,7 @@ import { connectDB } from '../../../../../../lib/db.js';
 import Application from '../../../../../../models/Application.js';
 import { requireSession } from '../../../../../../lib/auth.js';
 import { scopeOf } from '../../../../../../lib/permissions.js';
+import Job from '../../../../../../models/Job.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,10 @@ export async function POST(req, { params }) {
     await connectDB();
     const filter = { _id: params.id, deletedAt: null };
     if (scopeOf(session.role) === 'assigned') filter.assignedTo = session.id;
+    if (scopeOf(session.role) === 'ownJobs') {
+      const ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+      filter.jobId = { $in: ownJobIds };
+    }
 
     const app = await Application.findOneAndUpdate(
       filter,

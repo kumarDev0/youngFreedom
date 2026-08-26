@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db.js';
 import Application from '../../../../models/Application.js';
 import User from '../../../../models/User.js';
+import Job from '../../../../models/Job.js';
 import { requireSession } from '../../../../lib/auth.js';
 import { CAPS, scopeOf } from '../../../../lib/permissions.js';
 import { maskPhone, maskEmail } from '../../../../lib/mask.js';
@@ -35,8 +36,17 @@ export async function GET(req) {
 
     const filter = { deletedAt: url.searchParams.get('trash') === '1' ? { $ne: null } : null };
 
-    /* scope: what this role is allowed to see at all */
+    /* scope: what this role is allowed to see at all — this was missing
+       the 'ownJobs' case entirely, meaning a recruiter's list request fell
+       through with no restriction added and returned every application in
+       the system. The Jobs list and the single-application detail routes
+       both already had this check; only this one, the main list a
+       recruiter actually uses day to day, did not. */
     if (scope === 'assigned') filter.assignedTo = session.id;
+    if (scope === 'ownJobs') {
+      const ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+      filter.jobId = { $in: ownJobIds };
+    }
     if (scope === 'none') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     /* filters */

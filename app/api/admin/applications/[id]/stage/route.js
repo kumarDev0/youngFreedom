@@ -4,6 +4,8 @@ import Application from '../../../../../../models/Application.js';
 import AuditLog from '../../../../../../models/AuditLog.js';
 import { requireSession } from '../../../../../../lib/auth.js';
 import { clientIp } from '../../../../../../lib/ratelimit.js';
+import { scopeOf } from '../../../../../../lib/permissions.js';
+import Job from '../../../../../../models/Job.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,8 +30,15 @@ export async function POST(req, { params }) {
     if (!STAGES.includes(stage)) return NextResponse.json({ error: 'Invalid stage.' }, { status: 400 });
 
     await connectDB();
+
+    const filter = { _id: params.id, deletedAt: null };
+    if (scopeOf(session.role) === 'ownJobs') {
+      const ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+      filter.jobId = { $in: ownJobIds };
+    }
+
     const app = await Application.findOneAndUpdate(
-      { _id: params.id, deletedAt: null },
+      filter,
       { $set: { stage } },
       { new: true }
     ).select('appId stage');

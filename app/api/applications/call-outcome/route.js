@@ -4,6 +4,7 @@ import Application from '../../../../models/Application.js';
 import User from '../../../../models/User.js';
 import { requireSession } from '../../../../lib/auth.js';
 import { scopeOf } from '../../../../lib/permissions.js';
+import Job from '../../../../models/Job.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -31,6 +32,10 @@ export async function POST(req) {
 
     const filter = { _id: id, deletedAt: null };
     if (scopeOf(session.role) === 'assigned') filter.assignedTo = session.id;
+    if (scopeOf(session.role) === 'ownJobs') {
+      const ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+      filter.jobId = { $in: ownJobIds };
+    }
 
     const app = await Application.findOne(filter);
     if (!app) return NextResponse.json({ error: 'Not found, or not assigned to you.' }, { status: 404 });
