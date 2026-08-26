@@ -3,7 +3,7 @@ import { connectDB } from '../../../../lib/db.js';
 import Job from '../../../../models/Job.js';
 import Application from '../../../../models/Application.js';
 import AuditLog from '../../../../models/AuditLog.js';
-import { requireCapability } from '../../../../lib/auth.js';
+import { requireCapability, requireAnyCapability } from '../../../../lib/auth.js';
 import { jobSchema, slugify, firstError } from '../../../../lib/validation.js';
 import { clientIp } from '../../../../lib/ratelimit.js';
 import { scopeOf } from '../../../../lib/permissions.js';
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 /** GET — every job, with a live applicant count per job. */
 export async function GET(req) {
   try {
-    const session = await requireCapability('manageJobs');
+    const session = await requireAnyCapability('manageJobs', 'viewJobsPage');
     await connectDB();
 
     const filter = { deletedAt: null };

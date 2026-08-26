@@ -1,8 +1,13 @@
 import JobsManager from './JobsManager.js';
+import { getSession } from '../../../../lib/auth.js';
+import { CAPS } from '../../../../lib/permissions.js';
 
 export const dynamic = 'force-dynamic';
 
-export default function JobsPage() {
+export default async function JobsPage() {
+  const session = await getSession();
+  const caps = CAPS[session.role] || {};
+
   return (
     <>
       <header className="page-head">
@@ -14,7 +19,7 @@ export default function JobsPage() {
       <p className="lead" style={{ marginTop: -14, marginBottom: 22 }}>
         Published jobs appear on the website automatically. Nothing here needs a code change.
       </p>
-      <JobsManager />
+      <JobsManager readOnly={!caps.manageJobs} />
     </>
   );
 }

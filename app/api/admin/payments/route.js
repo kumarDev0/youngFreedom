@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
 import Payment from '../../../../models/Payment.js';
-import { requireCapability } from '../../../../lib/auth.js';
+import { requireAnyCapability } from '../../../../lib/auth.js';
 import { maskPhone } from '../../../../lib/mask.js';
 import { env } from '../../../../lib/env.js';
 
@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    await requireCapability('verifyPayments');
+    await requireAnyCapability('verifyPayments', 'viewPaymentsPage');
     await connectDB();
 
     const [pendingVerifications, recentPayments] = await Promise.all([

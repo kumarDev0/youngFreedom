@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../../lib/db.js';
 import Application from '../../../../../models/Application.js';
 import User from '../../../../../models/User.js';
-import { requireCapability } from '../../../../../lib/auth.js';
+import { requireAnyCapability } from '../../../../../lib/auth.js';
 import { getOutcomeBreakdown, OUTCOME_TYPES } from '../../../../../lib/callStats.js';
 
 export const runtime = 'nodejs';
@@ -21,7 +21,7 @@ const BATCH_CAP = 50;   // matches the cap enforced in /api/admin/calling/assign
 
 export async function GET() {
   try {
-    await requireCapability('assignCalls');
+    await requireAnyCapability('assignCalls', 'viewCallingTeamPage');
     await connectDB();
 
     const todayStr = new Date().toISOString().slice(0, 10);

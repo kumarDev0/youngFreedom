@@ -13,7 +13,7 @@ const BLANK = {
   description: '', status: 'draft', expiresAt: ''
 };
 
-export default function JobsManager() {
+export default function JobsManager({ readOnly = false }) {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);   // null | 'new' | job id
@@ -111,7 +111,7 @@ export default function JobsManager() {
           <span className="pill"><i className="dot live" />{live} live</span>
           <span className="pill">{jobs.length} total</span>
         </div>
-        <button className="btn-primary" onClick={openNew}>+ New job</button>
+        {!readOnly && <button className="btn-primary" onClick={openNew}>+ New job</button>}
       </div>
 
       {editing && (
@@ -237,13 +237,15 @@ export default function JobsManager() {
                 {j.stay && <li>{j.stay}</li>}
                 {j.openings > 0 && <li>{j.openings} openings</li>}
               </ul>
-              <footer>
-                <button onClick={() => openEdit(j)}>Edit</button>
-                {j.status !== 'published'
-                  ? <button className="go" onClick={() => setStatus(j.id, 'published')}>Publish</button>
-                  : <button onClick={() => setStatus(j.id, 'closed')}>Close</button>}
-                <button className="danger" onClick={() => remove(j)}>Delete</button>
-              </footer>
+              {!readOnly && (
+                <footer>
+                  <button onClick={() => openEdit(j)}>Edit</button>
+                  {j.status !== 'published'
+                    ? <button className="go" onClick={() => setStatus(j.id, 'published')}>Publish</button>
+                    : <button onClick={() => setStatus(j.id, 'closed')}>Close</button>}
+                  <button className="danger" onClick={() => remove(j)}>Delete</button>
+                </footer>
+              )}
             </article>
           ))}
         </div>

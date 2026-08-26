@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-export default function PaymentsManager() {
+export default function PaymentsManager({ readOnly = false }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -92,7 +92,9 @@ export default function PaymentsManager() {
                       <td className="mono" style={{ letterSpacing: '.04em' }}>{p.utr}</td>
                       <td className="muted">{new Date(p.submittedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        {rejecting === p.id ? (
+                        {readOnly ? (
+                          <span className="muted" style={{ fontSize: '.78rem' }}>View only</span>
+                        ) : rejecting === p.id ? (
                           <span style={{ display: 'flex', gap: 6 }}>
                             <input value={reason} onChange={(e) => setReason(e.target.value)}
                                    placeholder="Reason" style={{

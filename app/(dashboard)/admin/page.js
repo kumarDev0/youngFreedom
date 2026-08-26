@@ -1,9 +1,10 @@
 import { getSession } from '../../../lib/auth.js';
 import { getOverview, formatINR, timeAgo } from '../../../lib/stats.js';
-import { CAPS } from '../../../lib/permissions.js';
+import { CAPS, scopeOf } from '../../../lib/permissions.js';
 import { TrendChart, DonutChart, BarList, Funnel } from './Charts.js';
 import { connectDB } from '../../../lib/db.js';
 import Application from '../../../models/Application.js';
+import Job from '../../../models/Job.js';
 import { getOutcomeBreakdown } from '../../../lib/callStats.js';
 import OutcomeGrid from './OutcomeGrid.js';
 
@@ -88,7 +89,17 @@ export default async function OverviewPage() {
     );
   }
 
-  const s = await getOverview();
+  /* A recruiter sees only their own jobs' figures — the same principle
+     already applied to a caller's Overview, just scoped by job ownership
+     instead of call assignment. Owner and admin get {} / null, meaning
+     unscoped, exactly as before. */
+  let overviewScope = {}, ownJobIds = null;
+  if (scopeOf(session.role) === 'ownJobs') {
+    await connectDB();
+    ownJobIds = await Job.find({ createdBy: session.id }).distinct('_id');
+    overviewScope = { jobId: { $in: ownJobIds } };
+  }
+  const s = await getOverview(overviewScope, ownJobIds);
 
   return (
     <>
@@ -166,7 +177,9 @@ export default async function OverviewPage() {
               <thead>
                 <tr>
                   <th>ID</th><th>Name</th><th>District</th>
-                  <th>Qualification</th><th>Stage</th><th>Fee</th><th>When</th>
+                  <th>Qualification</th><th>Stage</th>
+                  {caps.viewPayments && <th>Fee</th>}
+                  <th>When</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,7 +190,7 @@ export default async function OverviewPage() {
                     <td>{r.district}</td>
                     <td>{r.qualification}</td>
                     <td><span className={`tag tag-${r.stage}`}>{r.stage}</span></td>
-                    <td className="mono">{formatINR(r.fee?.amount)}</td>
+                    {caps.viewPayments && <td className="mono">{formatINR(r.fee?.amount)}</td>}
                     <td className="muted">{timeAgo(r.createdAt)}</td>
                   </tr>
                 ))}
