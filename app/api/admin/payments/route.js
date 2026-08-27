@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '../../../../lib/db.js';
 import PendingApplication from '../../../../models/PendingApplication.js';
 import Payment from '../../../../models/Payment.js';
+import Job from '../../../../models/Job.js';
 import { requireAnyCapability } from '../../../../lib/auth.js';
 import { maskPhone } from '../../../../lib/mask.js';
 import { env } from '../../../../lib/env.js';
@@ -26,13 +27,25 @@ export async function GET() {
     const [pendingVerifications, recentPayments] = await Promise.all([
       PendingApplication.find({ 'manualPayment.status': 'submitted' })
         .sort({ 'manualPayment.submittedAt': 1 })   // oldest first — first in, first checked
-        .select('appId name phone fee manualPayment createdAt')
+        .select('appId name phone fee manualPayment createdAt jobId')
         .lean(),
 
       Payment.find({}).sort({ createdAt: -1 }).limit(50)
         .select('appId amount method status createdAt')
         .lean()
     ]);
+
+    /* which job (and who posted it) each pending payment belongs to — once
+       several recruiters are posting jobs, whoever is verifying a payment
+       needs this to make sense of what they're looking at, not just a
+       name and an amount floating with no context */
+    const jobIds = [...new Set(pendingVerifications.map((p) => p.jobId).filter(Boolean).map(String))];
+    const jobInfo = jobIds.length
+      ? Object.fromEntries(
+          (await Job.find({ _id: { $in: jobIds } }).select('title createdBy').populate('createdBy', 'name').lean())
+            .map((j) => [String(j._id), { title: j.title, postedBy: j.createdBy?.name || 'Unknown' }])
+        )
+      : {};
 
     return NextResponse.json({
       paymentMode: env.paymentMode,
@@ -44,7 +57,9 @@ export async function GET() {
         amount: p.fee?.amount,
         utr: p.manualPayment?.utr,
         submittedAt: p.manualPayment?.submittedAt,
-        appliedAt: p.createdAt
+        appliedAt: p.createdAt,
+        jobTitle: p.jobId ? (jobInfo[String(p.jobId)]?.title || 'Deleted job') : null,
+        postedBy: p.jobId ? (jobInfo[String(p.jobId)]?.postedBy || 'Unknown') : null
       })),
       recentPayments: recentPayments.map((p) => ({
         appId: p.appId,

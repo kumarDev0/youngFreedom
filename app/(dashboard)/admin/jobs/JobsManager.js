@@ -223,6 +223,7 @@ export default function JobsManager({ readOnly = false }) {
               <p className="job-co">
                 {[j.company, [j.city, j.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'No location set'}
               </p>
+              {j.createdByName && <span className="job-poster">Posted by {j.createdByName}</span>}
               {/* A job saved before this schema existed has no salary. Showing
                   "NaN" would look broken; an explicit prompt is honest and
                   tells the user what to do about it. */}

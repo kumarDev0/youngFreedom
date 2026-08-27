@@ -80,13 +80,17 @@ export default function PaymentsManager({ readOnly = false }) {
             <div className="table-wrap">
               <table className="table">
                 <thead>
-                  <tr><th>App ID</th><th>Name</th><th>Phone</th><th>Amount</th><th>UTR submitted</th><th>When</th><th></th></tr>
+                  <tr><th>App ID</th><th>Name</th><th>Job</th><th>Phone</th><th>Amount</th><th>UTR submitted</th><th>When</th><th></th></tr>
                 </thead>
                 <tbody>
                   {data.pendingVerifications.map((p) => (
                     <tr key={p.id}>
                       <td className="mono">{p.appId}</td>
                       <td><b>{p.name}</b></td>
+                      <td className="muted" style={{ fontSize: '.78rem' }}>
+                        {p.jobTitle || '—'}
+                        {p.postedBy && <span style={{ display: 'block', fontSize: '.68rem', opacity: .7 }}>by {p.postedBy}</span>}
+                      </td>
                       <td className="mono muted">{p.phoneMasked}</td>
                       <td className="mono">₹{p.amount}</td>
                       <td className="mono" style={{ letterSpacing: '.04em' }}>{p.utr}</td>

@@ -34,6 +34,7 @@ export default async function AdminLayout({ children }) {
     { href: '/admin/calls',        label: 'My calls',     icon: '☏', show: session.role === 'caller' },
     { href: '/admin/calling',      label: 'Calling team', icon: '⛭', show: caps.assignCalls || caps.viewCallingTeamPage },
     { href: '/admin/jobs',         label: 'Jobs',         icon: '⬢', show: caps.manageJobs || caps.viewJobsPage },
+    { href: '/admin/job-performance', label: 'Job performance', icon: '◆', show: caps.viewPayments || caps.viewJobPerformancePage },
     { href: '/admin/payments',     label: 'Payments',     icon: '₹', show: caps.viewPayments || caps.viewPaymentsPage },
     { href: '/admin/team',         label: 'Team',         icon: '◍', show: caps.manageTeam },
     { href: '/admin/audit',        label: 'Audit log',    icon: '❑', show: caps.viewAudit }

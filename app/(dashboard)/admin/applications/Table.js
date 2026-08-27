@@ -22,7 +22,9 @@ export default function Table({ districts, callers = [], caps }) {
   const [revealed, setRevealed] = useState({});
   const [toast, setToast] = useState('');
   const [trash, setTrash] = useState(false);
-  const [f, setF] = useState({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '' });
+  const [f, setF] = useState({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '', jobId: '', postedBy: '' });
+  const [jobOptions, setJobOptions] = useState([]);
+  const [posterOptions, setPosterOptions] = useState([]);
   const [page, setPage] = useState(1);
   const debounce = useRef(null);
   const [assigning, setAssigning] = useState(false);
@@ -45,6 +47,8 @@ export default function Table({ districts, callers = [], caps }) {
       if (!res.ok) throw new Error(data.error || 'Could not load');
       setRows(data.items);
       setMeta({ page: data.page, pages: data.pages, total: data.total });
+      setJobOptions(data.jobOptions || []);
+      setPosterOptions(data.posterOptions || []);
       setSelected(new Set());
     } catch (e) { setError(e.message); }
     setLoading(false);
@@ -209,6 +213,24 @@ export default function Table({ districts, callers = [], caps }) {
         <Select label="District" value={f.district} onChange={(v) => setFilter('district', v)} options={districts} />
         {caps.viewPayments &&
           <Select label="Payment" value={f.payment} onChange={(v) => setFilter('payment', v)} options={['paid', 'refunded']} />}
+        {jobOptions.length > 1 && (
+          <label className="sel">
+            <span>Job</span>
+            <select value={f.jobId} onChange={(e) => setFilter('jobId', e.target.value)}>
+              <option value="">All</option>
+              {jobOptions.map((j) => <option key={j.id} value={j.id}>{j.title}</option>)}
+            </select>
+          </label>
+        )}
+        {posterOptions.length > 1 && (
+          <label className="sel">
+            <span>Posted by</span>
+            <select value={f.postedBy} onChange={(e) => setFilter('postedBy', e.target.value)}>
+              <option value="">Everyone</option>
+              {posterOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </label>
+        )}
         {caps.assignCalls && (
           <label className="unassigned-toggle">
             <input type="checkbox" checked={f.unassigned === '1'}
@@ -221,7 +243,7 @@ export default function Table({ districts, callers = [], caps }) {
         <label className="date"><span>To</span>
           <input type="date" value={f.to} onChange={(e) => setFilter('to', e.target.value)} /></label>
         {active > 0 && (
-          <button className="clear" onClick={() => { setF({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '' }); setPage(1); }}>
+          <button className="clear" onClick={() => { setF({ q: '', stage: '', qualification: '', district: '', payment: '', from: '', to: '', unassigned: '', jobId: '', postedBy: '' }); setPage(1); }}>
             Clear {active}
           </button>
         )}
@@ -282,6 +304,7 @@ export default function Table({ districts, callers = [], caps }) {
                   <th className="tick"><input type="checkbox" checked={allOnPage} onChange={toggleAll} aria-label="Select all" /></th>
                   <th>ID</th><th>Name</th><th>Phone</th><th>District</th>
                   <th>Qualification</th><th>Trade</th><th>Stage</th>
+                  {jobOptions.length > 1 && <th>Job</th>}
                   {caps.assignCalls && <th>Assigned to</th>}
                   {caps.viewPayments && <th>Fee</th>}
                   <th>Applied</th>
@@ -307,6 +330,11 @@ export default function Table({ districts, callers = [], caps }) {
                     <td>{r.qualification}</td>
                     <td className="muted">{r.trade || '—'}</td>
                     <td><span className={`tag tag-${r.stage}`}>{r.stage}</span></td>
+                    {jobOptions.length > 1 && (
+                      <td>
+                        <span title={r.postedBy ? `Posted by ${r.postedBy}` : ''}>{r.jobTitle || '—'}</span>
+                      </td>
+                    )}
                     {caps.assignCalls && (
                       <td>
                         {r.assignedToName

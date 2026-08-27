@@ -66,6 +66,36 @@ export async function GET(req) {
        the same candidate to two different callers by accident — narrows
        the whole list down to only what nobody has ever been given yet */
     if (url.searchParams.get('unassigned') === '1') filter.assignedTo = null;
+
+    /**
+     * "Which job" and "posted by whom" — the two filters an owner needs the
+     * moment more than one person is posting jobs, to answer "how many
+     * candidates came in through Rahul's postings". Both combine correctly
+     * with the ownJobs scope above rather than overriding it: a recruiter
+     * narrowing further within their own jobs works, but they can never
+     * use these to reach past their own scope into someone else's — the
+     * intersection is computed, not a blind overwrite.
+     */
+    function narrowJobFilter(candidateIds) {
+      if (filter.jobId && filter.jobId.$in) {
+        const allowed = new Set(filter.jobId.$in.map(String));
+        const kept = candidateIds.filter((id) => allowed.has(String(id)));
+        filter.jobId = kept.length ? { $in: kept } : { $in: ['000000000000000000000000'] }; // no match, safely
+      } else if (candidateIds.length === 1) {
+        filter.jobId = candidateIds[0];
+      } else {
+        filter.jobId = { $in: candidateIds };
+      }
+    }
+
+    const jobIdParam = url.searchParams.get('jobId');
+    if (jobIdParam) narrowJobFilter([jobIdParam]);
+
+    const postedBy = url.searchParams.get('postedBy');
+    if (postedBy) {
+      const postedByJobIds = await Job.find({ createdBy: postedBy }).distinct('_id');
+      narrowJobFilter(postedByJobIds.map(String));
+    }
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);
@@ -103,6 +133,16 @@ export async function GET(req) {
         )
       : {};
 
+    /* the job each row belongs to, and who posted it — for the same reason
+       assignedToName exists: a raw id in a table tells nobody anything */
+    const jobIds = [...new Set(rows.map((r) => r.jobId).filter(Boolean).map(String))];
+    const jobInfo = jobIds.length
+      ? Object.fromEntries(
+          (await Job.find({ _id: { $in: jobIds } }).select('title createdBy').populate('createdBy', 'name').lean())
+            .map((j) => [String(j._id), { title: j.title, postedBy: j.createdBy?.name || 'Unknown' }])
+        )
+      : {};
+
     const items = rows.map((r) => {
       const base = {
         id: String(r._id),
@@ -116,7 +156,10 @@ export async function GET(req) {
         callOutcome: r.callOutcome || null,
         createdAt: r.createdAt,
         assignedTo: r.assignedTo ? String(r.assignedTo) : null,
-        assignedToName: r.assignedTo ? (callerNames[String(r.assignedTo)] || 'Former team member') : null
+        assignedToName: r.assignedTo ? (callerNames[String(r.assignedTo)] || 'Former team member') : null,
+        jobId: r.jobId ? String(r.jobId) : null,
+        jobTitle: r.jobId ? (jobInfo[String(r.jobId)]?.title || 'Deleted job') : null,
+        postedBy: r.jobId ? (jobInfo[String(r.jobId)]?.postedBy || 'Unknown') : null
       };
 
       /* phone is masked for everyone; revealing it is a separate, logged action */
@@ -133,12 +176,36 @@ export async function GET(req) {
       return base;
     });
 
+    /* the options for the "Job" / "Posted by" filter dropdowns — built
+       from whatever this role can already see (a recruiter only ever gets
+       their own jobs and their own name back here, which is correct: they
+       have nothing else to filter by anyway) */
+    /* reuses `filter` exactly as it already stands — including whatever
+       scope restriction (ownJobs, assigned) or explicit jobId/postedBy
+       filter was already applied above — and only adds the "must have a
+       job at all" condition when nothing already constrains jobId, rather
+       than overwriting an existing restriction and accidentally handing a
+       recruiter every job in the company back as filter options */
+    const jobFilterForOptions = filter.jobId ? filter : { ...filter, jobId: { $ne: null } };
+    const filterableJobIds = await Application.distinct('jobId', jobFilterForOptions);
+    const [jobOptions, posterOptions] = filterableJobIds.length
+      ? await Promise.all([
+          Job.find({ _id: { $in: filterableJobIds } }).select('title').sort({ title: 1 }).lean(),
+          Job.find({ _id: { $in: filterableJobIds } }).select('createdBy').populate('createdBy', 'name').lean()
+        ])
+      : [[], []];
+
+    const posterMap = new Map();
+    posterOptions.forEach((j) => { if (j.createdBy) posterMap.set(String(j.createdBy._id), j.createdBy.name); });
+
     return NextResponse.json({
       items,
       page,
       pageSize: PAGE_SIZE,
       total,
       pages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+      jobOptions: jobOptions.map((j) => ({ id: String(j._id), title: j.title })),
+      posterOptions: [...posterMap.entries()].map(([id, name]) => ({ id, name })),
       caps: {
         export: !!caps.export,
         delete: !!caps.deleteApplications,

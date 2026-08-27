@@ -3,6 +3,7 @@ import { connectDB } from '../../../../lib/db.js';
 import Job from '../../../../models/Job.js';
 import Application from '../../../../models/Application.js';
 import AuditLog from '../../../../models/AuditLog.js';
+import User from '../../../../models/User.js';
 import { requireCapability, requireAnyCapability } from '../../../../lib/auth.js';
 import { jobSchema, slugify, firstError } from '../../../../lib/validation.js';
 import { clientIp } from '../../../../lib/ratelimit.js';
@@ -31,6 +32,17 @@ export async function GET(req) {
     ]);
     const countMap = Object.fromEntries(counts.map((c) => [String(c._id), c.n]));
 
+    /* who posted each job — meaningful the moment more than one person can
+       post (owner, admin, or a recruiter each can), which is exactly the
+       case this was missing before */
+    const posterIds = [...new Set(jobs.map((j) => j.createdBy).filter(Boolean).map(String))];
+    const posterNames = posterIds.length
+      ? Object.fromEntries(
+          (await User.find({ _id: { $in: posterIds } }).select('name').lean())
+            .map((u) => [String(u._id), u.name])
+        )
+      : {};
+
     return NextResponse.json({
       items: jobs.map((j) => ({
         id: String(j._id),
@@ -42,6 +54,8 @@ export async function GET(req) {
         type: j.type, description: j.description || '',
         status: j.status, expiresAt: j.expiresAt,
         applicants: countMap[String(j._id)] || 0,
+        createdBy: j.createdBy ? String(j.createdBy) : null,
+        createdByName: j.createdBy ? (posterNames[String(j.createdBy)] || 'Former team member') : 'Unknown',
         createdAt: j.createdAt
       }))
     });
