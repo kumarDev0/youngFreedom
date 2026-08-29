@@ -21,7 +21,13 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    await requireAnyCapability('viewPayments', 'viewJobPerformancePage');
+    /* manageJobs is what lets a recruiter in here at all — they get a
+       genuinely different response below, not just the same data with a
+       button hidden: their own totals stand in for "company-wide", and
+       the poster list holds only their own row. No other poster's name,
+       job, or revenue is ever computed into a response a recruiter can
+       receive, not just filtered out client-side. */
+    const session = await requireAnyCapability('viewPayments', 'viewJobPerformancePage', 'manageJobs');
     await connectDB();
 
     const jobs = await Job.find({ deletedAt: null })
@@ -104,6 +110,15 @@ export async function GET() {
       revenue: jobRows.reduce((n, r) => n + r.revenue, 0),
       placed: jobRows.reduce((n, r) => n + r.placed, 0)
     };
+
+    if (session.role === 'recruiter') {
+      const own = posterRows.find((p) => p.id === session.id);
+      return NextResponse.json({
+        company: own ? { jobsPosted: own.jobsPosted, applicants: own.applicants, revenue: own.revenue, placed: own.placed }
+                      : { jobsPosted: 0, applicants: 0, revenue: 0, placed: 0 },
+        posters: own ? [own] : []
+      });
+    }
 
     return NextResponse.json({ company, posters: posterRows });
 

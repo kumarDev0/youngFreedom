@@ -5,6 +5,7 @@ import User from '../../../../../models/User.js';
 import { requireSession } from '../../../../../lib/auth.js';
 import { CAPS, scopeOf } from '../../../../../lib/permissions.js';
 import { maskPhone, maskEmail } from '../../../../../lib/mask.js';
+import { signedResumeUrl } from '../../../../../lib/cloudinary.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -66,7 +67,19 @@ export async function GET(req, { params }) {
       out.fee = app.fee?.amount;
       out.payment = { status: app.payment?.status, method: app.payment?.method, paidAt: app.payment?.paidAt };
     }
-    if (caps.viewResume) out.resumeUrl = app.resumeUrl || null;
+    /**
+     * A resume is uploaded as type: 'authenticated' — private by design,
+     * so a guessed or leaked link shows nothing. That means the URL
+     * stored at upload time can never be opened directly; it has to be
+     * re-signed, fresh, on every view. Handing back the stored resumeUrl
+     * as-is (what this did before) sent the browser a link Cloudinary
+     * would always refuse, which is exactly what surfaced as "Failed to
+     * load PDF document" — the file was never broken, the link was never
+     * usable in the first place.
+     */
+    if (caps.viewResume) {
+      out.resumeUrl = app.resumePublicId ? signedResumeUrl(app.resumePublicId) : null;
+    }
 
     return NextResponse.json(out);
 

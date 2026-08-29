@@ -5,7 +5,7 @@ import OutcomeGrid from '../OutcomeGrid.js';
 
 function inr(n) { return '\u20B9' + (n || 0).toLocaleString('en-IN'); }
 
-export default function JobPerformance() {
+export default function JobPerformance({ isRecruiter = false }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,16 +46,16 @@ export default function JobPerformance() {
     <>
       <div className="card" style={{ marginBottom: 16 }}>
         <div className="card-head">
-          <h2>Company-wide</h2>
-          <span className="card-note">every poster combined</span>
+          <h2>{isRecruiter ? 'Your totals' : 'Company-wide'}</h2>
+          <span className="card-note">{isRecruiter ? 'across all your postings' : 'every poster combined'}</span>
         </div>
         <OutcomeGrid breakdown={companyBreakdown} />
       </div>
 
       <div className="card table-card">
         <div className="card-head" style={{ padding: '20px 20px 0' }}>
-          <h2>By poster</h2>
-          <span className="card-note">sorted by revenue</span>
+          <h2>{isRecruiter ? 'Your jobs' : 'By poster'}</h2>
+          {!isRecruiter && <span className="card-note">sorted by revenue</span>}
         </div>
 
         {data.posters.length === 0 ? (

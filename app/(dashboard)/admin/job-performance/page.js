@@ -1,8 +1,12 @@
 import JobPerformance from './JobPerformance.js';
+import { getSession } from '../../../../lib/auth.js';
 
 export const dynamic = 'force-dynamic';
 
-export default function JobPerformancePage() {
+export default async function JobPerformancePage() {
+  const session = await getSession();
+  const isRecruiter = session.role === 'recruiter';
+
   return (
     <>
       <header className="page-head">
@@ -12,10 +16,11 @@ export default function JobPerformancePage() {
         </div>
       </header>
       <p className="lead" style={{ marginTop: -14, marginBottom: 22 }}>
-        Owner, admin, and every recruiter can post jobs — this is who is bringing in candidates
-        and revenue, and through which postings.
+        {isRecruiter
+          ? 'How your own postings are doing — applicants, revenue, and placements, job by job.'
+          : 'Owner, admin, and every recruiter can post jobs — this is who is bringing in candidates and revenue, and through which postings.'}
       </p>
-      <JobPerformance />
+      <JobPerformance isRecruiter={isRecruiter} />
     </>
   );
 }
