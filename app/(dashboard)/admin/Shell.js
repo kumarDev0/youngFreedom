@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * The only client component in the dashboard.
@@ -12,6 +12,26 @@ import { useState } from 'react';
 export default function Shell({ links, user, children }) {
   const [open, setOpen] = useState(false);
   const path = typeof window !== 'undefined' ? window.location.pathname : '';
+
+  /**
+   * The mobile topbar is sticky and carries a blur — exactly the shape of
+   * cost that made the public site's scrolling feel heavy: a fixed,
+   * blurred element has its backdrop resampled on every frame while a
+   * long table (Applications, Audit Log) scrolls underneath it. This is
+   * the same fix applied there — the blur switches off for the ~140ms
+   * tail of an active scroll and returns once it settles, using a class
+   * on <body> rather than React state so it never triggers a re-render.
+   */
+  useEffect(() => {
+    let t;
+    function onScroll() {
+      document.body.classList.add('is-scrolling');
+      clearTimeout(t);
+      t = setTimeout(() => document.body.classList.remove('is-scrolling'), 140);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', onScroll); clearTimeout(t); };
+  }, []);
 
   return (
     <div className="shell">

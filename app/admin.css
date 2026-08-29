@@ -349,6 +349,12 @@ button{font:inherit;color:inherit}
     background:rgba(6,13,30,.92);
     backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   }
+  /* the single biggest per-frame cost while scrolling a long table on a
+     phone: a sticky, blurred header has its backdrop resampled every
+     frame the content moves beneath it. Off for the ~140ms tail of an
+     active scroll, back the moment it settles — background alone (no
+     blur) is already solid enough to stay readable in that window. */
+  body.is-scrolling .topbar{backdrop-filter:none;-webkit-backdrop-filter:none}
   .topbar-brand{display:flex;align-items:center;gap:10px;
     font-family:var(--f-display);font-size:.95rem;letter-spacing:-.02em}
   .topbar .mark{width:30px;height:30px;flex:0 0 30px;font-size:.68rem}
@@ -497,6 +503,10 @@ button{font:inherit;color:inherit}
   .table-card .table-wrap{margin:0;padding:0}
   .actionbar.show{position:sticky;bottom:12px;z-index:20;
     background:rgba(8,20,44,.97);backdrop-filter:blur(12px)}
+  /* same reasoning as .topbar above — this one only matters once rows are
+     selected and the sticky bar is actually on screen, but the cost while
+     it is is identical */
+  body.is-scrolling .actionbar.show{backdrop-filter:none;-webkit-backdrop-filter:none}
   .toast{left:16px;right:16px;bottom:16px;transform:none;text-align:center}
   @keyframes toastIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 }
