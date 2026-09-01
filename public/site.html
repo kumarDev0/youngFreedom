@@ -790,6 +790,11 @@ select option{background:#0A1226;color:#EAF3FF}
 .ap-title{
   font-family:var(--f-display);font-size:clamp(1.05rem,1.5vw,1.28rem);font-weight:600;
   letter-spacing:-.02em;line-height:1.15;white-space:nowrap;
+  /* the card already clips overflow, so a long title on a narrow phone was
+     silently cut off with no visual sign anything was hidden — an ellipsis
+     at least tells the eye there's more, on the one card in the whole page
+     that didn't already do this */
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;
 }
 .ap-meta{
   font-family:var(--f-mono);font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;
