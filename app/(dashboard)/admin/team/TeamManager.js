@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 const ROLE_OPTIONS = [
   { value: 'admin', label: 'Admin' },
@@ -18,6 +18,8 @@ export default function TeamManager() {
   const [inviteLink, setInviteLink] = useState('');
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState('');
+  const [expanded, setExpanded] = useState(() => new Set());
+  const [logins, setLogins] = useState({});     // userId -> array of {at, ip} | 'loading'
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -70,6 +72,22 @@ export default function TeamManager() {
       flash(next === 'disabled' ? `${user.name} disabled` : `${user.name} re-enabled`);
       load();
     } catch (e) { flash(e.message); }
+  }
+
+  async function toggleHistory(userId) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
+    if (!logins[userId]) {
+      setLogins((prev) => ({ ...prev, [userId]: 'loading' }));
+      try {
+        const res = await fetch(`/api/admin/team/${userId}/logins`);
+        const json = await res.json();
+        setLogins((prev) => ({ ...prev, [userId]: res.ok ? json.logins : [] }));
+      } catch { setLogins((prev) => ({ ...prev, [userId]: [] })); }
+    }
   }
 
   if (loading) return <div className="card"><div className="skeleton">{Array.from({ length: 3 }).map((_, i) => <span key={i} />)}</div></div>;
@@ -140,33 +158,68 @@ export default function TeamManager() {
           <div className="table-wrap">
             <table className="table">
               <thead>
-                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Calls</th><th>Last active</th><th></th></tr>
+                <tr><th></th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Calls</th><th>Last active</th><th></th></tr>
               </thead>
               <tbody>
                 {data.users.map((u) => (
-                  <tr key={u.id}>
-                    <td><b>{u.name}</b></td>
-                    <td className="muted">{u.email}</td>
-                    <td><span className="tag">{u.label}</span></td>
-                    <td>
-                      <span className={`tag ${u.status === 'active' ? 'tag-captured' : u.status === 'invited' ? 'tag-new' : 'tag-failed'}`}>
-                        {u.status}
-                      </span>
-                    </td>
-                    <td className="mono muted">
-                      {u.callStats?.assigned ? `${u.callStats.called || 0}/${u.callStats.assigned}` : '—'}
-                    </td>
-                    <td className="muted">
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'Never'}
-                    </td>
-                    <td>
-                      {u.role !== 'owner' && (
-                        <button className={u.status === 'disabled' ? 'reveal' : 'btn-link'} onClick={() => toggleStatus(u)}>
-                          {u.status === 'disabled' ? 'Re-enable' : 'Disable'}
+                  <Fragment key={u.id}>
+                    <tr>
+                      <td className="tick">
+                        <button className="row-expand" onClick={() => toggleHistory(u.id)} aria-label="Show login history">
+                          <svg viewBox="0 0 24 24" style={{ transform: expanded.has(u.id) ? 'rotate(90deg)' : 'none' }}>
+                            <path d="M9 6l6 6-6 6" />
+                          </svg>
                         </button>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                      <td><b>{u.name}</b></td>
+                      <td className="muted">{u.email}</td>
+                      <td><span className="tag">{u.label}</span></td>
+                      <td>
+                        <span className={`tag ${u.status === 'active' ? 'tag-captured' : u.status === 'invited' ? 'tag-new' : 'tag-failed'}`}>
+                          {u.status}
+                        </span>
+                      </td>
+                      <td className="mono muted">
+                        {u.callStats?.assigned ? `${u.callStats.called || 0}/${u.callStats.assigned}` : '—'}
+                      </td>
+                      <td className="muted">
+                        {u.lastLoginAt
+                          ? new Date(u.lastLoginAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+                          : 'Never'}
+                      </td>
+                      <td>
+                        {u.role !== 'owner' && (
+                          <button className={u.status === 'disabled' ? 'reveal' : 'btn-link'} onClick={() => toggleStatus(u)}>
+                            {u.status === 'disabled' ? 'Re-enable' : 'Disable'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                    {expanded.has(u.id) && (
+                      <tr className="row-detail">
+                        <td colSpan={8}>
+                          {logins[u.id] === 'loading' && <p className="dp-empty-text" style={{ padding: '6px 0' }}>Loading…</p>}
+                          {Array.isArray(logins[u.id]) && logins[u.id].length === 0 && (
+                            <p className="dp-empty-text" style={{ padding: '6px 0' }}>No recorded sign-ins yet.</p>
+                          )}
+                          {Array.isArray(logins[u.id]) && logins[u.id].length > 0 && (
+                            <ul style={{ listStyle: 'none', margin: 0, padding: '6px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {logins[u.id].map((l, i) => (
+                                <li key={i} style={{ display: 'flex', gap: 14, fontSize: '.84rem' }}>
+                                  <span className="mono" style={{ color: 'var(--porcelain)' }}>
+                                    {new Date(l.at).toLocaleString('en-IN', {
+                                      day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+                                    })}
+                                  </span>
+                                  {l.ip && <span className="muted mono">{l.ip}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
