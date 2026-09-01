@@ -39,7 +39,7 @@ export default function LegalPage({ eyebrow, title, updated, toc, active, childr
           <div className="lg-contact">
             <h2>Questions about this document</h2>
             <a href="mailto:youngfreedom.hr@gmail.com">youngfreedom.hr@gmail.com</a>
-            <a href="tel:+917257869010">+91 72578 69010</a>
+            <a href="tel:+918651752400">+91 86517 52400</a>
           </div>
 
           <div className="lg-crosslinks">

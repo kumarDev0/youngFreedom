@@ -1231,12 +1231,24 @@ select option{background:#0A1226;color:#EAF3FF}
 }
 .mu-upi-row button:hover{background:rgba(255,255,255,.14)}
 
+/* light UPI-green, matching the colour every candidate already associates
+   with GPay/PhonePe/BHIM — the one button in this modal that actually
+   completes the payment should look different from everything else on
+   the page, not blend into the same blue accent as the rest of the site */
 .mu-app-link{
-  display:block;padding:13px;margin-bottom:22px;text-align:center;text-decoration:none;
-  border:1px solid var(--line-2,rgba(255,255,255,.16));color:var(--porcelain);font-size:.84rem;font-weight:700;
-  transition:border-color .2s,color .2s;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  padding:14px;margin-bottom:22px;text-decoration:none;
+  border:1px solid rgba(66,209,116,.4);color:#0B3B1E;font-size:.86rem;font-weight:800;
+  letter-spacing:.01em;
+  background:linear-gradient(135deg,#8FF0B0,#42D174 60%,#2CB85E);
+  box-shadow:0 14px 30px -14px rgba(66,209,116,.65),inset 0 1px 0 rgba(255,255,255,.5);
+  transition:transform .18s var(--ease-out),box-shadow .25s var(--ease-out),filter .25s;
 }
-.mu-app-link:hover{border-color:rgba(99,226,255,.35);color:var(--cyan)}
+.mu-app-link svg{width:18px;height:18px;stroke:#0B3B1E;fill:none;stroke-width:2.3;
+  stroke-linecap:round;stroke-linejoin:round;flex:0 0 18px}
+.mu-app-link:hover{filter:brightness(1.06);box-shadow:0 18px 36px -14px rgba(66,209,116,.8)}
+/* the "click effect" — a real tactile press, not just a hover colour change */
+.mu-app-link:active{transform:scale(.96);box-shadow:0 6px 16px -10px rgba(66,209,116,.6)}
 
 .mu-divider{
   position:relative;text-align:center;margin:6px 0 18px;font-family:var(--f-mono);
@@ -2541,7 +2553,10 @@ footer{content-visibility:auto;contain-intrinsic-size:auto 500px}
         <button type="button" id="muCopyBtn" data-hi="कॉपी करें">Copy</button>
       </div>
 
-      <a class="mu-app-link" id="muPayAppLink" href="#" data-hi="यूपीआई ऐप में खोलें">Open in your UPI app &rarr;</a>
+      <a class="mu-app-link" id="muPayAppLink" href="#">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg>
+        <span data-hi="यूपीआई ऐप में खोलें">Open in your UPI app &rarr;</span>
+      </a>
 
       <div class="mu-divider"><span data-hi="भुगतान कर दिया है?">Already paid?</span></div>
 
@@ -2729,7 +2744,7 @@ footer{content-visibility:auto;contain-intrinsic-size:auto 500px}
 </a>
 
 <div class="mobar">
-  <a href="tel:+917257869010" class="btn btn-ghost" data-hi="कॉल करें">Call us</a>
+  <a href="tel:+918651752400" class="btn btn-ghost" data-hi="कॉल करें">Call us</a>
   <a href="#apply" class="btn" data-hi="अभी आवेदन करें">Apply now</a>
 </div>
 
