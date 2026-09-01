@@ -28,22 +28,11 @@ const csp = [
 module.exports = {
   poweredByHeader: false,
   reactStrictMode: true,
-  /**
-   * The homepage used to be app/page.js issuing redirect('/site.html') —
-   * a redirect is a real HTTP round trip the browser follows, which is
-   * exactly why the address bar ended up showing "/site.html" once it
-   * landed: that is genuinely where the browser was told to go.
-   *
-   * A rewrite instead serves the file's content directly for a request to
-   * "/", entirely on the server — the browser never sees a redirect and
-   * never learns the content actually lives at a different path, so the
-   * address bar keeps showing exactly what the visitor typed.
-   */
-  async rewrites() {
-    return [
-      { source: '/', destination: '/site.html' }
-    ];
-  },
+  /* The homepage is now served directly by app/route.js, which reads
+     public/site.html off disk and returns it as-is — a route handler at
+     "/" rather than a rewrite pointing at a public file, so nothing here
+     depends on how a specific Next.js version resolves a rewrite target
+     that happens to be a static asset. */
   async headers() {
     return [{
       source: '/:path*',
