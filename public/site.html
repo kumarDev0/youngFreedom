@@ -3138,7 +3138,12 @@ var FAQS = [
   fetch("/api/jobs")
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(data){
-      if(!data || !data.jobs || !data.jobs.length) return;
+      /* a request that genuinely failed (no response, malformed body) is
+         the only case that should keep the fallback sample cards up —
+         a real response with a real, empty jobs array is not a failure,
+         it is the honest current state, and showing three fake postings
+         over it would be actively misleading to a candidate. */
+      if(!data || !data.jobs) return;
       JOBS = data.jobs.map(fromApi);
       paint(JOBS);
       applyState();
@@ -3169,7 +3174,13 @@ var FAQS = [
     if(!shown && !empty){
       var d = document.createElement("div");
       d.className = "jobs-empty";
-      d.innerHTML = "<b>No roles match that search</b>Try a different city or clear the filters \u2014 new openings are added every week.";
+      /* two genuinely different situations, worth two different messages:
+         a search/filter that matched nothing is fixed by clearing it —
+         telling someone to "clear the filters" when there were never any
+         cards to filter in the first place would just be confusing. */
+      d.innerHTML = cards.length
+        ? "<b>No roles match that search</b>Try a different city or clear the filters \u2014 new openings are added every week."
+        : "<b>No openings right now</b>New roles are posted regularly \u2014 check back soon, or use \"Track your application\" if you\u2019ve already applied.";
       list.appendChild(d);
     } else if(shown && empty){ empty.remove(); }
     if(window.YFmeasure) window.YFmeasure();
